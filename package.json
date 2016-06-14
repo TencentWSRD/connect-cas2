@@ -1,0 +1,44 @@
+{
+  "author": {
+    "name": "vinsonxiao"
+  },
+  "bugs": {
+    "url": "https://github.com/xiaoyuze88/connect-cas2/issues"
+  },
+  "dependencies": {
+    "lodash": "^4.13.1",
+    "node-fetch": "^1.5.3",
+    "query-string": "^4.1.0",
+    "xml2js": "^0.4.16"
+  },
+  "description": "NodeJS implement of CAS(Central Authentication Service) client.",
+  "devDependencies": {
+    "body-parser": "^1.15.1",
+    "cookie-parser": "^1.4.3",
+    "ejs": "^2.4.2",
+    "express": "^4.13.4",
+    "express-session": "^1.13.0",
+    "session-memory-store": "^0.2.1"
+  },
+  "directories": {
+    "lib": "./lib"
+  },
+  "homepage": "https://github.com/xiaoyuze88/connect-cas2",
+  "license": "MIT",
+  "main": "index.js",
+  "maintainers": [
+    {
+      "email": "xiaoyuze88@gmail.com",
+      "name": "xiaoyuze88"
+    }
+  ],
+  "name": "connect-cas2",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xiaoyuze88/connect-cas2.git"
+  },
+  "scripts": {
+    "start": "node ./example"
+  },
+  "version": "1.0.0-beta"
+}
