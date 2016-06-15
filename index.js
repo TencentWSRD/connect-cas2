@@ -31,10 +31,16 @@ var DEFAULT_OPTIONS = {
   }
 };
 
-function connectCas(options) {
-  options = _.merge({}, DEFAULT_OPTIONS, options);
+function ConnectCas(options) {
+  if (!(this instanceof ConnectCas)) return new ConnectCas(options);
 
-  if (!options.servicePrefix || !options.serverPath) throw new Error('Unexpected options.service or options.serverPath!');
+  this.options = _.merge({}, DEFAULT_OPTIONS, options);
+
+  if (!this.options.servicePrefix || !this.options.serverPath) throw new Error('Unexpected options.service or options.serverPath!');
+}
+
+ConnectCas.prototype.core = function() {
+  var options = this.options;
 
   return function(req, res, next) {
     if (!req.sessionStore) throw new Error('You must setup a session store before you can use CAS client!');
@@ -43,9 +49,11 @@ function connectCas(options) {
     var pathname = req.path;
     var method = req.method;
 
-    req.getProxyTicket = function(targetService, callback) {
-      return getProxyTicket(req, options, targetService, callback);
-    };
+    if (options.paths.proxyCallback) {
+      req.getProxyTicket = function(targetService, callback) {
+        return getProxyTicket(req, options, targetService, callback);
+      };
+    }
 
     if (utils.shouldIgnore(req, options)) return next();
 
@@ -63,7 +71,32 @@ function connectCas(options) {
     }
 
     next();
-  }
-}
+  };
+};
 
-module.exports = connectCas;
+ConnectCas.prototype.logout = function() {
+  var options = this.options;
+
+  return function(req, res, next) {
+    if (!req.session) {
+      return res.redirect('/');
+    }
+    // Forget our own login session
+
+    if (req.session.destroy) {
+      req.session.destroy();
+    } else {
+      // Cookie-based sessions have no destroy()
+      req.session = null;
+    }
+
+    // Send the user to the official campus-wide logout URL
+    return res.redirect(utils.getPath('logout', options));
+  };
+};
+
+ConnectCas.prototype.getPath = function(name) {
+  return utils.getPath(name, this.options);
+};
+
+module.exports = ConnectCas;

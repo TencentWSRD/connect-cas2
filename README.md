@@ -1,22 +1,22 @@
-# nodejs-cas
+# connect-cas2
 
 CAS Client NodeJS implement，support CAS 2.0+ protocol.
 
-Adapted from https://github.com/acemetrix/connect-cas。
+Totally restructured from my another project [nodejs-cas](https://npmjs.com/package/nodejs-cas).
 
 ## VERSION
 
-1.0.11
+1.0.0-beta
 
 ## Install
 
-    npm install nodejs-cas
+    npm install connect-cas2
             
 ## Quick start
 
 ```javascript
 var express = require('express');
-var CasClient = require('nodejs-cas');
+var ConnectCas = require('connect-cas2');
 var bodyParser = require('body-parser');
 var session = require('express-session');
 var cookieParser = require('cookie-parser');
@@ -31,43 +31,35 @@ app.use(session({
   store: new MemoryStore()  // or other session store
 }));
 
-var cas = new CasClient({
-  path: 'https://cas.xx.com/cas',
-  ajaxHeader: 'x-client-fetch',
-  servicePrefix: 'http://your.service.path.com',
-
-  ignore: [
-    function(path, req) {
-      return path.indexOf('somePathYourWantToIgnore') > -1;
+var casClient = new ConnectCas({
+  debug: true,
+    ignore: [
+      /\/ignore/
+    ],
+    match: [],
+    servicePrefix: 'http://10.17.86.87:8080',
+    serverPath: 'http://rdmdev.oa.com',
+    paths: {
+      validate: '/cas/validate',
+      serviceValidate: '/buglycas/serviceValidate',
+      proxy: '/buglycas/proxy',
+      login: '/buglycas/login',
+      logout: '/buglycas/logout',
+      proxyCallback: '/buglycas/proxyCallback'
     },
-    'static/style.css',
-    /static\/*/
-  ],
-  paths: {
-    validate: '/cas/validate',
-    serviceValidate: '/cas/serviceValidate',
-    proxy: '/cas/proxy',
-    login: '/cas/login',
-    logout: '/cas/logout',
-    proxyCallback: '/cas/proxyCallback'
-  }
-})
-
-app.use(cas.serviceValidate())
-  .use(cas.ssout())  // Only if you need to SSOFF(single sign off)
-  .use(cas.authenticate());
-
-app.get('/logout', function (req, res) {
-  if (!req.session) {
-    return res.redirect('/');
-  }
-
-  req.session.destroy();
-
-  var options = cas.options;
-
-  return res.redirect(options.path + options.paths.logout + '?service=' + encodeURIComponent('http://your.service.path.com'));
+    redirect: false,
+    gateway: false,
+    renew: false,
+    ssoff: true,
+    fromAjax: {
+      header: 'x-client-ajax',
+      status: 418
+    }
 });
+
+app.use(casClient.core());
+app.get('/logout', casClient.logout());
+
 ```
 
 ## Constructor
@@ -80,7 +72,7 @@ var casClient = new CasClient(options);
 
 ### options
 
-#### options.path {String} (Required)
+#### options.serverPath {String} (Required)
 
 The path of your CAS server. For example: https://www.your-cas-server-path.com/cas
 
@@ -117,6 +109,9 @@ if (regRule.test(req.path)) next();
 if (funcRule(req.path, req)) next();
 ```
 
+#### options.match {Array} (Optional, default: [])
+If you set this option, only the paths that matched one of the rules will go into CAS middleware. All rules works just like `options.ignore`.
+
 #### options.paths {Object} (Optional, default: {})
 Relative paths to specific all functional paths to the CAS protocol. If you havn't modified the APIs of your CAS server, you may don't need to set this option. (In proxy mode, you must set the options.paths.proxyCall)
 
@@ -151,16 +146,27 @@ In proxy mode, setting this path means you want this path of your CAS Client to 
 
 In none-proxy mode, don't set this option!
 
-#### options.ajaxHeader {String} (Optional, default: '')
-Because an AJAX request can't notice 302 redirect response, and will directly redirect under the hook without telling you anything.
+#### options.fromAjax {Object} (Optional, default: {})
+Because an AJAX request can't notice 302 redirect response, and will directly redirect without telling you anything.
 
 So when your user's authentication is expired, and your CAS Client and CAS Server is not in the same domain, (In most cases they won't be the same domain) when they send an AJAX request, oops, an not-allowed-cross-domain exception will occur!
 
-To prevent this embarrassing situation, we add this option. So send all AJAX request with the header you set.
+To prevent this embarrassing situation, we add this option.
 
-For example: options.ajaxHeader = 'x-client-ajax', then send header: x-client-ajax=true with the AJAX request.
+#### options.fromAjax.header {String} (Optional, default: 'x-client-ajax')
+CAS will assume all request with header: 'x-client-ajax' is an AJAX request, so when user's authentication expired, CAS won't redirect to the login page, but send back the specified status code that you set as `options.fromAjax.status`.
 
-Then we'll know this request is an AJAX request, and when the authentication is expired, we will send a `418` TEAPOT statusCode other than `302` to the login page, you need to handle this status code, and tell your user to refresh the page or what to do.
+#### options.fromAjax.status {Number} (Optional, default: 418)
+As introduced before, when user's authentication expired, CAS won't redirect to the login page, but send back this as http status code.
+
+For example:
+
+    options.fromAjax = {
+       header: 'x-client-ajax',
+       status: 418
+    };
+
+So what you need to do in your browser code is you should handle this situation, when status code is 418, you should do `window.location.reload()` or something else to let your user reauthenticate.
 
 #### options.debug {Boolean} (Optional, default: false)
 For debug usage, we will log every step when CAS client is interacting with CAS server.
@@ -173,7 +179,16 @@ otherwise, CAS just keep the same logic that will redirect to the last url after
 
 ### METHOD
 
-#### CasClient.proxyTicket(pgt, targetService, callback)
+#### casClient.core()
+
+Return a middleware that handles all the CAS client logic.
+
+Use as `app.use(casClient.core())`.
+
+#### casClient.logout()
+Return a middleware that handles the logout action.
+
+Use it like `app.get('/logout', casClient.logout())`. It will destroy
 
 In proxy mode, request a ticket from CAS server to interact with targetService.
 

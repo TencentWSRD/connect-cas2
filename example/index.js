@@ -4,11 +4,9 @@ var session = require('express-session');
 
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
-// import flash = 'express-flash';
 var CasClient = require('../index');
 var ejs = require('ejs');
 var morgan = require('morgan');
-// import ejs from 'ejs';
 
 var app = new Express();
 
@@ -33,7 +31,7 @@ app.set('views', path.join(__dirname, './views'));
 
 // CAS config
 // =============================================================================
-app.use(CasClient({
+var casClient = new CasClient({
   debug: true,
   ignore: [
     /\/ignore/
@@ -57,29 +55,13 @@ app.use(CasClient({
     header: 'x-client-ajax',
     status: 418
   }
-}));
+});
+
+app.use(casClient.core());
+app.get('/logout', casClient.logout());
 
 app.get('/', function(req, res) {
   res.render('index.ejs');
-});
-
-app.get('/logout', function(req, res) {
-  if (!req.session) {
-    return res.redirect('/');
-  }
-  // Forget our own login session
-
-  if (req.session.destroy) {
-    req.session.destroy();
-  } else {
-    // Cookie-based sessions have no destroy()
-    req.session = null;
-  }
-
-// Send the user to the official campus-wide logout URL
-  const options = cas.options;
-
-  return res.redirect(options.path + options.paths.logout + '?service=' + encodeURIComponent(options.servicePrefix + options.paths.validate));
 });
 
 app.get('/api', function(req, res) {
