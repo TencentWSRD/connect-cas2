@@ -6,7 +6,7 @@ Totally restructured from my another project [nodejs-cas](https://npmjs.com/pack
 
 ## VERSION
 
-1.0.0-beta
+1.1.0-beta
 
 ## Install
 
@@ -51,6 +51,11 @@ var casClient = new ConnectCas({
     gateway: false,
     renew: false,
     ssoff: true,
+    cache: {
+      enable: true,
+      ttl: 5 * 60 * 1000,
+      filter: []
+    },
     fromAjax: {
       header: 'x-client-ajax',
       status: 418
@@ -60,6 +65,11 @@ var casClient = new ConnectCas({
 app.use(casClient.core());
 app.get('/logout', casClient.logout());
 
+// or do some logic yourself
+app.get('/logout', function(req, res, next) {
+  // Do whatever you like here, then call the logout middleware
+  casClient.logout()(req, res, next);
+});
 ```
 
 ## Constructor
@@ -177,6 +187,22 @@ Change the default behaviour that after user login or login failed, CAS redirect
 If you return `true` from this redirect function, then CAS won't redirect to the last url, (So make sure you send a response in your function.)
 otherwise, CAS just keep the same logic that will redirect to the last url after user login or login failed.
 
+#### options.cache {Object} (Optional) `Since v1.1.0-beta`
+Works in PROXY-MODE ONLY!
+
+If you don't want to request a proxy-ticket every time you interact with your server, you can set this options to `enable=true`.
+(NOTICE!! You must make sure the server you want to interact already set the PT cacheable, or using an PT that cached in your CAS client won't work!)
+
+#### options.cache.enable {Boolean} (Optional, defualt: false)
+
+#### options.cache.ttl {Number} (Optional, default: 300000 , in millisecond )
+How long will the PT be cached.
+
+#### options.cache.filter {Array} (Optinal, default: [])
+In some cases, not every servers you want to interact enabled cacheable PT, so you can set the filter rules here, if one rule matchs the service url, it's PT won't be cached.
+
+Every rule works like the `options.ignore`.
+
 ### METHOD
 
 #### casClient.core()
@@ -188,53 +214,44 @@ Use as `app.use(casClient.core())`.
 #### casClient.logout()
 Return a middleware that handles the logout action.
 
-Use it like `app.get('/logout', casClient.logout())`. It will destroy
+Use it like `app.get('/logout', casClient.logout())`. It will destroy the session of current user and then redirect to the CAS server logout page.
 
-In proxy mode, request a ticket from CAS server to interact with targetService.
+#### req.getProxyTicket(servicePath, [disableCache], callback)
+If you setup options.paths.proxyCallback, CAS middleware will add a function called `getProxyTicket` on the request object, so you can access that by callback `req.getProxyTicket`.
 
-You can receive the ticket by passing a callback function which will be called like: `callback(error, ticket)`, besides, CasClient.proxyTicket will also return a promise,
-when resolved, it will pass `ticket` to the resolve function, then you can send it as ticket parameter to request to the other server.
+`servicePath` is the service path you want to interact with.
+
+`disableCache` {Boolean} (optional) When you setup PT cache, then you get a cached PT from `getProxyTicket`, but somehow the service validate this cached PT failed. In that case, you need to call this function again with setting this param to `true`.
+
+`callback(err, pt)`
 
 Example:
 ```javascript
-    // In promise way
-    CasClient.proxyTicketPromise(req.session.pgt, 'http://your-target-service.com')
-      .then(function(ticket) {
-        // Then you can send reqeust with parameter ticket http://your-target-service.com/some/path?ticket=${ticket}
-      })
-      .catch(function(err) {
-        throw err
-      });
+   app.get('/api', function(req, res) {
+     var service = 'http://your-service.com';
+     req.getProxyTicket(service + '/cas', function(err, pt) {
+       if (err) return res.status(401).send('Error when requesting PT, Authentication failed!');
 
-    // or callback
-    CasClient.proxyTicketPromise(req.session.pgt, 'http://your-target-service.com', function(error, ticket) {
-      if (error) throw error;
-      // Then you can send reqeust with parameter ticket http://your-target-service.com/some/path?ticket=${ticket}
-    });
+       request.get(service + '/api/someapi?ticket=' + 'pt', function(err, response) {
+          res.send(response);
+       });
+     });
+   });
 ```
 
 ### PROXY MODE
-In proxy mode, at first you need to set options.paths.proxyCallback, when the proxy-mode-login is finished, you can access a value called `pgt` on req.session.pgt.
-
-By using this `pgt`, you can get a ticket from CAS server by calling `CasClient.proxyTicket`.
+In proxy mode, before you want to interact with your server, you need to request a ticket from CAS server.
 
 ### NONE-PROXY MODE
 In none-proxy mode, don't set options.paths.proxyCallback, when all middle-ware passed, that means the login succeed.
 
 ## CHANGE LOG
 
-#### 1.0.10
-Add new option `redirect`, to change the default logic that CAS will redirect to the last url after login. 
+#### 1.1.0-beta
+Add `cache proxy ticket` feature.
 
-#### 1.0.2
-Restructure code, use constructor to initialize CasClient, change some options.
-
-#### From 0.2.x to 1.0.x
-In 1.0.x, you need to new an CAS-Client instance instead of calling them as static method in 0.2.x. We change options a lot to make it more easier to config and use.
-
-We remove the 'other domain proxyCallback' feature and custom 'pgtFn' which you can handle pgtIou and pgtId yourself, because we find out that we can rarely use them and it'll make it more complicated to understand and use if you're not familiar with CAS Protocol.
-
-We combined the static functions: proxyTicketPromise and proxyTicket into one function `proxyTicket` which can both use a promise way or callback way.
+#### 1.0.0-beta
+Restructured from [nodejs-cas](https://npmjs.com/package/nodejs-cas).
 
 ## More
 

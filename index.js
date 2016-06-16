@@ -5,6 +5,7 @@ var proxyCallback = require('./lib/proxyCallback');
 var authenticate = require('./lib/authenticate');
 var slo = require('./lib/slo');
 var getProxyTicket = require('./lib/getProxyTicket');
+var PTStroe = require('./lib/PTStroe');
 var utils = require('./lib/utils');
 
 var DEFAULT_OPTIONS = {
@@ -25,6 +26,12 @@ var DEFAULT_OPTIONS = {
   gateway: false,
   renew: false,
   slo: true,
+  // Is proxy-ticket cacheable
+  cache: {
+    enable: false,
+    ttl: 5 * 60, // In millisecond
+    filter: []
+  },
   fromAjax: {
     header: 'x-client-ajax',
     status: 418
@@ -37,10 +44,13 @@ function ConnectCas(options) {
   this.options = _.merge({}, DEFAULT_OPTIONS, options);
 
   if (!this.options.servicePrefix || !this.options.serverPath) throw new Error('Unexpected options.service or options.serverPath!');
+
+  this.ptStore = new PTStroe(_.merge({}, this.options.cache, { debug: this.options.debug }));
 }
 
 ConnectCas.prototype.core = function() {
   var options = this.options;
+  var that = this;
 
   return function(req, res, next) {
     if (!req.sessionStore) throw new Error('You must setup a session store before you can use CAS client!');
@@ -50,8 +60,8 @@ ConnectCas.prototype.core = function() {
     var method = req.method;
 
     if (options.paths.proxyCallback) {
-      req.getProxyTicket = function(targetService, callback) {
-        return getProxyTicket(req, options, targetService, callback);
+      req.getProxyTicket = function(targetService, disableCache, callback) {
+        return getProxyTicket.call(that, req, targetService, disableCache, callback);
       };
     }
 

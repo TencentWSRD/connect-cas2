@@ -51,6 +51,13 @@ var casClient = new CasClient({
   gateway: false,
   renew: false,
   ssoff: true,
+  cache: {
+    enable: true,
+    ttl: 5 * 60 * 1000,
+    filter: [
+      // /betaserverpre\.et\.wsd\.com/
+    ]
+  },
   fromAjax: {
     header: 'x-client-ajax',
     status: 418
