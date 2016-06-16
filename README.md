@@ -6,7 +6,7 @@ Totally restructured from my another project [nodejs-cas](https://npmjs.com/pack
 
 ## VERSION
 
-1.1.3-beta
+1.1.4-beta
 
 ## Install
 
