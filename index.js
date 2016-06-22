@@ -47,46 +47,12 @@ function ConnectCas(options) {
 
   this.ptStore = new PTStroe(_.merge({}, this.options.cache, { debug: this.options.debug }));
 
-  this.logger = this.LoggerFactory.call(this);
+  this.logger = this.options.logger || function(req, type) {
+      return console[type].bind(console[type]);
+    };
 }
 
 ConnectCas.prototype.LoggerFactory = function() {
-  var debug = this.options && this.options.debug,
-    logMethod = this.options && this.options.logger || console;
-
-  function _loggerFactory(type) {
-    return function() {
-      var args = utils.toArray(arguments);
-      args.unshift('[CONNECT-CAS]:: ');
-      if ((type == 'info' && debug) || type != 'info') logMethod[type].apply(logMethod[type], args);
-    };
-  }
-
-  // info = function() {
-  //
-  // },
-  //   warn = function() {
-  //     var args = utils.toArray(arguments);
-  //     args.unshift('[CONNECT-CAS]:: ');
-  //     logMethod['warn'].apply(logMethod['warn'], args);
-  //   },
-  //   error = function() {
-  //     var args = utils.toArray(arguments);
-  //     args.unshift('[CONNECT-CAS]:: ');
-  //     logMethod['error'].apply(logMethod['error'], args);
-  //   };
-
-  ['info', 'warn', 'error'].forEach(function(type) {
-    if (typeof logMethod[type] !== 'function') throw new Error('this.options.logger.' + type + ' is not a function! Is ' + typeof logMethod[type] + ' instead.');
-  });
-
-  return {
-    log: _loggerFactory('info'),
-    debug: _loggerFactory('info'),
-    info: _loggerFactory('info'),
-    warn: _loggerFactory('warn'),
-    error: _loggerFactory('error')
-  }
 };
 
 ConnectCas.prototype.core = function() {
@@ -100,9 +66,16 @@ ConnectCas.prototype.core = function() {
     var pathname = req.path;
     var method = req.method;
 
+    var logger = {
+      info: that.logger(req, 'log'),
+      error: that.logger(req, 'error'),
+      warn: that.logger(req, 'warn'),
+      log: that.logger(req, 'log')
+    };
+
     if (options.paths.proxyCallback) {
       req.getProxyTicket = function(targetService, disableCache, callback) {
-        return getProxyTicket.call(that, req, targetService, disableCache, that.logger, callback);
+        return getProxyTicket.call(that, req, targetService, disableCache, logger, callback);
       };
     }
 
@@ -111,14 +84,14 @@ ConnectCas.prototype.core = function() {
     if (method === 'GET') {
       switch (pathname) {
         case options.paths.validate:
-          return validate(req, res, next, options, that.logger);
+          return validate(req, res, next, options, logger);
         case options.paths.proxyCallback:
-          return proxyCallback(req, res, next, options, that.logger);
+          return proxyCallback(req, res, next, options, logger);
         default:
-          return authenticate(req, res, next, options, that.logger);
+          return authenticate(req, res, next, options, logger);
       }
     } else if (method === 'POST' && pathname === options.paths.validate && options.slo) {
-      return slo(req, res, next, options, that.logger);
+      return slo(req, res, next, options, logger);
     }
 
     next();
