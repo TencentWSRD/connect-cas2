@@ -46,7 +46,35 @@ function ConnectCas(options) {
   if (!this.options.servicePrefix || !this.options.serverPath) throw new Error('Unexpected options.service or options.serverPath!');
 
   this.ptStore = new PTStroe(_.merge({}, this.options.cache, { debug: this.options.debug }));
+
+  this.logger = this.LoggerFactory.call(this);
 }
+
+ConnectCas.prototype.LoggerFactory = function() {
+  var debug = this.options && this.options.debug,
+    logMethod = this.options && this.options.logger || console,
+    info = function() {
+      if (debug) logMethod['info'].apply(logMethod['info'], utils.toArray(arguments));
+    },
+    warn = function() {
+      logMethod['warn'].apply(logMethod['info'], utils.toArray(arguments));
+    },
+    error = function() {
+      logMethod['error'].apply(logMethod['info'], utils.toArray(arguments));
+    };
+
+  ['info', 'warn', 'error'].forEach(function(type) {
+    if (typeof logMethod[type] !== 'function') throw new Error('this.options.logger.' + type + ' is not a function! Is ' + typeof logMethod[type] + ' instead.');
+  });
+  
+  return {
+    log: info,
+    debug: info,
+    info: info,
+    warn: warn,
+    error: error
+  }
+};
 
 ConnectCas.prototype.core = function() {
   var options = this.options;
@@ -61,7 +89,7 @@ ConnectCas.prototype.core = function() {
 
     if (options.paths.proxyCallback) {
       req.getProxyTicket = function(targetService, disableCache, callback) {
-        return getProxyTicket.call(that, req, targetService, disableCache, callback);
+        return getProxyTicket.call(that, req, targetService, disableCache, that.logger, callback);
       };
     }
 
@@ -70,11 +98,11 @@ ConnectCas.prototype.core = function() {
     if (method === 'GET') {
       switch (pathname) {
         case options.paths.validate:
-          return validate(req, res, next, options);
+          return validate(req, res, next, options, that.logger);
         case options.paths.proxyCallback:
-          return proxyCallback(req, res, next, options);
+          return proxyCallback(req, res, next, options, that.logger);
         default:
-          return authenticate(req, res, next, options);
+          return authenticate(req, res, next, options, that.logger);
       }
     } else if (method === 'POST' && pathname === options.paths.validate && options.slo) {
       return slo(req, res, next, options);
