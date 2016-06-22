@@ -52,27 +52,40 @@ function ConnectCas(options) {
 
 ConnectCas.prototype.LoggerFactory = function() {
   var debug = this.options && this.options.debug,
-    logMethod = this.options && this.options.logger || console,
-    info = function() {
-      if (debug) logMethod['info'].apply(logMethod['info'], utils.toArray(arguments));
-    },
-    warn = function() {
-      logMethod['warn'].apply(logMethod['info'], utils.toArray(arguments));
-    },
-    error = function() {
-      logMethod['error'].apply(logMethod['info'], utils.toArray(arguments));
+    logMethod = this.options && this.options.logger || console;
+
+  function _loggerFactory(type) {
+    return function() {
+      var args = utils.toArray(arguments);
+      args.unshift('[CONNECT-CAS]:: ');
+      if ((type == 'info' && debug) || type != 'info') logMethod[type].apply(logMethod[type], args);
     };
+  }
+
+  // info = function() {
+  //
+  // },
+  //   warn = function() {
+  //     var args = utils.toArray(arguments);
+  //     args.unshift('[CONNECT-CAS]:: ');
+  //     logMethod['warn'].apply(logMethod['warn'], args);
+  //   },
+  //   error = function() {
+  //     var args = utils.toArray(arguments);
+  //     args.unshift('[CONNECT-CAS]:: ');
+  //     logMethod['error'].apply(logMethod['error'], args);
+  //   };
 
   ['info', 'warn', 'error'].forEach(function(type) {
     if (typeof logMethod[type] !== 'function') throw new Error('this.options.logger.' + type + ' is not a function! Is ' + typeof logMethod[type] + ' instead.');
   });
-  
+
   return {
-    log: info,
-    debug: info,
-    info: info,
-    warn: warn,
-    error: error
+    log: _loggerFactory('info'),
+    debug: _loggerFactory('info'),
+    info: _loggerFactory('info'),
+    warn: _loggerFactory('warn'),
+    error: _loggerFactory('error')
   }
 };
 
@@ -105,7 +118,7 @@ ConnectCas.prototype.core = function() {
           return authenticate(req, res, next, options, that.logger);
       }
     } else if (method === 'POST' && pathname === options.paths.validate && options.slo) {
-      return slo(req, res, next, options);
+      return slo(req, res, next, options, that.logger);
     }
 
     next();
