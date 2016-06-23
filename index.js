@@ -7,6 +7,7 @@ var slo = require('./lib/slo');
 var getProxyTicket = require('./lib/getProxyTicket');
 var PTStroe = require('./lib/PTStroe');
 var utils = require('./lib/utils');
+var url = require('url');
 
 var DEFAULT_OPTIONS = {
   debug: false,
@@ -50,6 +51,10 @@ function ConnectCas(options) {
   this.logger = this.options.logger || function(req, type) {
       return console[type].bind(console[type]);
     };
+
+  var pgtURI = url.parse(this.options.paths.proxyCallback);
+
+  this.proxyCallbackPathName = (pgtURI.protocol && pgtURI.host) ? pgtURI.pathname : this.options.paths.proxyCallback;
 }
 
 ConnectCas.prototype.LoggerFactory = function() {
@@ -85,7 +90,7 @@ ConnectCas.prototype.core = function() {
       switch (pathname) {
         case options.paths.validate:
           return validate(req, res, next, options, logger);
-        case options.paths.proxyCallback:
+        case that.proxyCallbackPathName:
           return proxyCallback(req, res, next, options, logger);
         default:
           return authenticate(req, res, next, options, logger);

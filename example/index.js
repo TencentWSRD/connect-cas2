@@ -45,7 +45,7 @@ var casClient = new CasClient({
     proxy: '/buglycas/proxy',
     login: '/buglycas/login',
     logout: '/buglycas/logout',
-    proxyCallback: '/buglycas/proxyCallback'
+    proxyCallback: 'http://10.17.86.87:8080/buglycas/proxyCallback'
   },
   redirect: false,
   gateway: false,
