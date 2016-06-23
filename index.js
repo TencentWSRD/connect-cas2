@@ -124,8 +124,8 @@ ConnectCas.prototype.logout = function() {
   };
 };
 
-ConnectCas.prototype.getPath = function(name) {
-  return utils.getPath(name, this.options);
+ConnectCas.prototype.getPath = function(name, req) {
+  return utils.getPath(name, this.options, req);
 };
 
 module.exports = ConnectCas;
