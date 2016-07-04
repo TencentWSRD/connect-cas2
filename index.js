@@ -5,9 +5,11 @@ var proxyCallback = require('./lib/proxyCallback');
 var authenticate = require('./lib/authenticate');
 var slo = require('./lib/slo');
 var getProxyTicket = require('./lib/getProxyTicket');
+var getProxyTicketThroughRestletReq = require('./lib/getProxyTicketThroughRestletReq');
 var PTStroe = require('./lib/PTStroe');
 var utils = require('./lib/utils');
 var url = require('url');
+var globalStoreCache = require('./lib/globalStoreCache');
 
 var DEFAULT_OPTIONS = {
   debug: false,
@@ -30,13 +32,24 @@ var DEFAULT_OPTIONS = {
   // Is proxy-ticket cacheable
   cache: {
     enable: false,
-    ttl: 5 * 60, // In millisecond
+    ttl: 5 * 60 * 1000, // In millisecond
     filter: []
   },
   fromAjax: {
     header: 'x-client-ajax',
     status: 418
-  }
+  },
+  // demo:
+  // [{
+  //   trigger: function(req) {
+  //     return false;
+  //   },
+  //   params: {
+  //     username: '',
+  //     password: ''
+  //   }
+  // }]
+  restletIntegration: {}
 };
 
 function ConnectCas(options) {
@@ -78,13 +91,27 @@ ConnectCas.prototype.core = function() {
       log: that.logger(req, 'log')
     };
 
+    if (utils.shouldIgnore(req, options)) return next();
+
+    var matchedRestletIntegrateRule;
+
+    if (options.restletIntegration && options.paths.restletIntegration) {
+      for (var i in options.restletIntegration) {
+        if (options.restletIntegration[i] && typeof options.restletIntegration[i].trigger === 'function' && options.restletIntegration[i].trigger(req)) {
+          matchedRestletIntegrateRule = i;
+          break;
+        }
+      }
+    }
+
     if (options.paths.proxyCallback) {
       req.getProxyTicket = function(targetService, disableCache, callback) {
-        return getProxyTicket.call(that, req, targetService, disableCache, logger, callback);
+        return matchedRestletIntegrateRule ? getProxyTicketThroughRestletReq.call(that, req, targetService, matchedRestletIntegrateRule, options.restletIntegration[matchedRestletIntegrateRule], logger, typeof disableCache === 'function' ? disableCache : callback) :
+          getProxyTicket.call(that, req, targetService, disableCache, logger, callback);
       };
     }
 
-    if (utils.shouldIgnore(req, options)) return next();
+    if (matchedRestletIntegrateRule) return next();
 
     if (method === 'GET') {
       switch (pathname) {
@@ -126,6 +153,17 @@ ConnectCas.prototype.logout = function() {
 
 ConnectCas.prototype.getPath = function(name, req) {
   return utils.getPath(name, this.options, req);
+};
+
+ConnectCas.prototype.destroyRestletIntegrations = function() {
+  var stores = globalStoreCache.getAll();
+
+  for (var i in stores) {
+    utils.deleteRequest(utils.getPath('restletIntegration') + '/' + stores[i], function(err, response) {
+      if (err || !response || response.statusCode != 200 || response.status != 200) return console.error('Error when delete restletIntegartion-created TGT!');
+      console.log('Delete restletIntegartion-created TGT succeed!', stores[i]);
+    });
+  }
 };
 
 module.exports = ConnectCas;

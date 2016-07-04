@@ -1,4 +1,5 @@
 var path = require('path');
+var http = require('http');
 var Express = require('express');
 var session = require('express-session');
 
@@ -29,6 +30,13 @@ app.engine('.html', ejs.renderFile);
 app.set('view engine', 'html');
 app.set('views', path.join(__dirname, './views'));
 
+var demoParams = {
+  appId: '900007430',
+  pid: '1',
+  type: 8,
+  appKey: 'BXEKfudgcgVDBb8k'
+};
+
 // CAS config
 // =============================================================================
 var casClient = new CasClient({
@@ -45,7 +53,8 @@ var casClient = new CasClient({
     proxy: '/buglycas/proxy',
     login: '/buglycas/login',
     logout: '/buglycas/logout',
-    proxyCallback: 'http://10.17.86.87:8080/buglycas/proxyCallback'
+    proxyCallback: 'http://10.17.86.87:8080/buglycas/proxyCallback',
+    restletIntegration: '/buglycas/v1/tickets'
   },
   redirect: false,
   gateway: false,
@@ -61,6 +70,20 @@ var casClient = new CasClient({
   fromAjax: {
     header: 'x-client-ajax',
     status: 418
+  },
+  restletIntegration: {
+    demo1: {
+      trigger: function(req) {
+        console.log('Checking restletIntegration rules');
+        return true;
+      },
+      params: {
+        username: demoParams.appId + '_' + demoParams.pid,
+        from: 'http://10.17.86.87:8080/cas/validate',
+        type: demoParams.type,
+        password: JSON.stringify({ appId: demoParams.appId + '_' + demoParams.pid, appKey: demoParams.appKey })
+      }
+    }
   }
 });
 
@@ -71,6 +94,7 @@ app.get('/', function(req, res) {
   res.render('index.ejs');
 });
 
+
 app.get('/api', function(req, res) {
   var service = 'http://betaserverpre.et.wsd.com/betaserverv2';
   req.getProxyTicket(service + '/shiro-cas', function(err, pt) {
@@ -80,6 +104,10 @@ app.get('/api', function(req, res) {
       return res.status(500).send(JSON.stringify(err));
     }
 
+    console.log('sending request to ', service + '/file/4d6960ff-c11f-4ba8-baed-af1a2f95bffe/info?' + require('query-string').stringify({
+        ticket: pt
+      }));
+
     require('../lib/utils').getRequest(service + '/file/4d6960ff-c11f-4ba8-baed-af1a2f95bffe/info?' + require('query-string').stringify({
         ticket: pt
       }), function(err, response) {
@@ -88,8 +116,14 @@ app.get('/api', function(req, res) {
   })
 });
 
+var server = http.createServer(app);
 
-app.listen(8080, function(err) {
+
+server.listen(8080, function(err) {
   if (err) throw err;
   console.log('App is now listening to port 8080.');
+});
+
+server.on('close', function() {
+  console.log('server closed', arguments);
 });
