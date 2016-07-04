@@ -1,5 +1,6 @@
 var path = require('path');
 var http = require('http');
+var process = require('process');
 var Express = require('express');
 var session = require('express-session');
 
@@ -116,6 +117,12 @@ app.get('/api', function(req, res) {
   })
 });
 
+app.get('/clear', function(req, res) {
+  req.clearRestlet();
+  console.log('this means it is sync!');
+  res.send('ok');
+});
+
 var server = http.createServer(app);
 
 
@@ -124,6 +131,26 @@ server.listen(8080, function(err) {
   console.log('App is now listening to port 8080.');
 });
 
-server.on('close', function() {
-  console.log('server closed', arguments);
-});
+process.stdin.resume();//so the program will not close instantly
+
+function exitHandler(options, err) {
+  if (options.cleanup) console.log('clean');
+  if (err) console.log(err.stack);
+  if (options.exit) process.exit();
+}
+
+process.on('exit', exitHandler.bind(null, { cleanup: true }));
+
+process.on('SIGINT', exitHandler.bind(null, { exit: true }));
+
+//catches uncaught exceptions
+process.on('uncaughtException', exitHandler.bind(null, { exit: true }));
+
+
+var obj = {
+  "http://ciserver.et.wsd.com/ciserver3.0": true,
+  "http://processservice.et.wsd.com/processservice": false,
+  "http://svnmanage.sdet.wsd.com/svnmange": false,
+  "http://productserver.et.wsd.com/productserver": false,
+  "http://cimonitor.et.wsd.com/monitorserver": false
+};

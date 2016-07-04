@@ -8,6 +8,7 @@ var getProxyTicket = require('./lib/getProxyTicket');
 var getProxyTicketThroughRestletReq = require('./lib/getProxyTicketThroughRestletReq');
 var PTStroe = require('./lib/PTStroe');
 var utils = require('./lib/utils');
+var clearRestletTGTs = require('./lib/clearRestletTGTs');
 var url = require('url');
 var globalStoreCache = require('./lib/globalStoreCache');
 
@@ -99,6 +100,7 @@ ConnectCas.prototype.core = function() {
       for (var i in options.restletIntegration) {
         if (options.restletIntegration[i] && typeof options.restletIntegration[i].trigger === 'function' && options.restletIntegration[i].trigger(req)) {
           matchedRestletIntegrateRule = i;
+          req.clearRestlet = clearRestletTGTs.bind(null, options, logger);
           break;
         }
       }
