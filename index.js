@@ -96,13 +96,17 @@ ConnectCas.prototype.core = function() {
 
     var matchedRestletIntegrateRule;
 
-    if (options.restletIntegration && options.paths.restletIntegration) {
-      for (var i in options.restletIntegration) {
-        if (options.restletIntegration[i] && typeof options.restletIntegration[i].trigger === 'function' && options.restletIntegration[i].trigger(req)) {
-          matchedRestletIntegrateRule = i;
-          req.clearRestlet = clearRestletTGTs.bind(null, options, logger);
-          break;
+    if (options.restletIntegration) {
+      if (options.paths.restletIntegration) {
+        for (var i in options.restletIntegration) {
+          if (options.restletIntegration[i] && typeof options.restletIntegration[i].trigger === 'function' && options.restletIntegration[i].trigger(req)) {
+            matchedRestletIntegrateRule = i;
+            req.clearRestlet = clearRestletTGTs.bind(null, options, logger);
+            break;
+          }
         }
+      } else {
+        logger.warn("options.restletIntegration is set, but options.paths.restletIntegration is undefined! Maybe you forget to set all your paths.")
       }
     }
 
