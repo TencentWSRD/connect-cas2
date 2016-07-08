@@ -92,8 +92,6 @@ ConnectCas.prototype.core = function() {
       log: that.logger(req, 'log')
     };
 
-    if (utils.shouldIgnore(req, options)) return next();
-
     var matchedRestletIntegrateRule;
 
     if (options.restletIntegration) {
@@ -118,6 +116,8 @@ ConnectCas.prototype.core = function() {
     }
 
     if (matchedRestletIntegrateRule) return next();
+
+    if (utils.shouldIgnore(req, options)) return next();
 
     if (method === 'GET') {
       switch (pathname) {
