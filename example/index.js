@@ -76,7 +76,7 @@ var casClient = new CasClient({
     demo1: {
       trigger: function(req) {
         console.log('Checking restletIntegration rules');
-        return true;
+        return false
       },
       params: {
         username: demoParams.appId + '_' + demoParams.pid,

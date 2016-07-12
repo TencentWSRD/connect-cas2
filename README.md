@@ -4,10 +4,6 @@ CAS Client NodeJS implement，support CAS 2.0+ protocol.
 
 Totally restructured from my another project [nodejs-cas](https://npmjs.com/package/nodejs-cas).
 
-## VERSION
-
-1.1.4-beta
-
 ## Install
 
     npm install connect-cas2
@@ -246,6 +242,39 @@ In proxy mode, before you want to interact with your server, you need to request
 In none-proxy mode, don't set options.paths.proxyCallback, when all middle-ware passed, that means the login succeed.
 
 ## CHANGE LOG
+
+#### 1.1.20-beta
+Bug fix for utils.sendRequest.
+
+#### 1.1.19-beta
+When restlet pgt is using, don't set it on session.
+
+#### 1.1.16-beta
+Add clear restlet cache feature.
+
+#### 1.1.15-beta
+Add `restlet` feature.
+
+#### 1.1.13-beta
+Support redis/memcache session, add cookie when set sessionStore.
+
+#### 1.1.11-beta
+Support absolute url for proxyCallback.
+
+#### 1.1.10-beta
+Improve custom logger.
+
+#### 1.1.6-beta
+Add custom logger support.
+
+#### 1.1.4-beta
+Add https support.
+
+#### 1.1.2-beta
+Add retry when cached PT expired, add `renew` option support.
+
+#### 1.1.1-beta
+Fix req.pathname is undefined, change to req.path.
 
 #### 1.1.0-beta
 Add `cache proxy ticket` feature.
