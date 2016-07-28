@@ -1,3 +1,5 @@
+require('es6-promise').polyfill();
+
 var casServer = require('./lib/casServer');
 var Express = require('express');
 var http = require('http');
