@@ -8,7 +8,6 @@ var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var CasClient = require('../..//index');
 var ejs = require('ejs');
-var morgan = require('morgan');
 
 var _ = require('lodash');
 
@@ -21,8 +20,6 @@ var _ = require('lodash');
  * @returns {*}
  */
 module.exports = function(app, casOptions, hookBeforeCasConfig, hookAfterCasConfig) {
-  // app.use(morgan('dev'));
-
   app.use(cookieParser('here is some secret'));
 
   var MemoryStore = require('session-memory-store')(session);
