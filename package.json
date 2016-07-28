@@ -3,7 +3,7 @@
     "name": "vinsonxiao"
   },
   "bugs": {
-    "url": "https://github.com/xiaoyuze88/connect-cas2/issues"
+    "url": "https://github.com/TencentWSRD/connect-cas2/issues"
   },
   "dependencies": {
     "lodash": "^4.13.1",
@@ -28,7 +28,7 @@
   "directories": {
     "lib": "./lib"
   },
-  "homepage": "https://github.com/xiaoyuze88/connect-cas2",
+  "homepage": "https://github.com/TencentWSRD/connect-cas2",
   "license": "MIT",
   "main": "index.js",
   "maintainers": [
@@ -40,7 +40,7 @@
   "name": "connect-cas2",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/xiaoyuze88/connect-cas2.git"
+    "url": "git+https://github.com/TencentWSRD/connect-cas2.git"
   },
   "scripts": {
     "start": "node ./example",
