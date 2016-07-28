@@ -1,3 +1,7 @@
+1.1.21-beta
+=================
+* Add test code.
+
 1.1.20-beta
 =================
 * Bug fix for utils.sendRequest.
