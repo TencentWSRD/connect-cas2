@@ -22,7 +22,7 @@
     "lodash": "^4.13.1",
     "mocha": "^2.5.3",
     "rewire": "^2.5.2",
-    "session-memory-store": "^0.2.1",
+    "session-memory-store": "^0.2.2",
     "uuid": "^2.0.2"
   },
   "directories": {
