@@ -1,0 +1,8 @@
+instrumentation:
+    root: .
+    extensions:
+        - .js
+    default-excludes: true
+    excludes: [
+      'appConfig.js'
+    ]
