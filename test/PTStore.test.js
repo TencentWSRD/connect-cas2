@@ -12,7 +12,7 @@ var casClientFactory = require('./lib/casClientFactory');
 
 var utils = require('../lib/utils');
 
-var PTStore = require('../lib/PTStroe');
+var PTStore = require('../lib/ptStroe');
 
 var handleCookies = require('./lib/handleCookie');
 
@@ -41,7 +41,8 @@ describe('PTStore功能正常', function() {
     }));
 
     logger = function() {
-      return function() {};
+      return function() {
+      };
     };
     server = http.createServer(app);
 
