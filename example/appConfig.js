@@ -1,4 +1,3 @@
-
 /**
  * For testing usage, separate the global config of the app
  */
@@ -9,7 +8,6 @@ var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var CasClient = require('../index');
 var ejs = require('ejs');
-var morgan = require('morgan');
 
 var _ = require('lodash');
 
@@ -100,7 +98,7 @@ module.exports = function(app, casOptions, hookBeforeCasConfig, hookAfterCasConf
       }
     }
   };
-  
+
   if (casOptions) {
     _.merge(defaultOptions, casOptions);
   }
@@ -112,7 +110,7 @@ module.exports = function(app, casOptions, hookBeforeCasConfig, hookAfterCasConf
   var casClient = new CasClient(defaultOptions);
 
   app.use(casClient.core());
-  
+
   if (typeof hookAfterCasConfig === 'function') hookAfterCasConfig(app);
 
   // if (typeof hookAfterCasConfig === 'function') {
