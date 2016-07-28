@@ -60,13 +60,23 @@ function ConnectCas(options) {
 
   if (!this.options.servicePrefix || !this.options.serverPath) throw new Error('Unexpected options.service or options.serverPath!');
 
-  this.ptStore = new PTStroe(_.merge({}, this.options.cache, { debug: this.options.debug }));
+  if (this.options.cache && this.options.cache.enable) {
+    this.ptStore = new PTStroe({
+      ttl: this.options.cache.ttl,
+      logger: this.options.logger
+    });
+  }
+
 
   this.logger = this.options.logger || function(req, type) {
       return console[type].bind(console[type]);
     };
 
-  var pgtURI = url.parse(this.options.paths.proxyCallback);
+  if (this.options.renew || this.options.gateway) {
+    console.warn('options.renew and options.gateway is not implement yet!');
+  }
+
+  var pgtURI = url.parse(this.options.paths.proxyCallback || '', true);
 
   this.proxyCallbackPathName = (pgtURI.protocol && pgtURI.host) ? pgtURI.pathname : this.options.paths.proxyCallback;
 }
@@ -96,10 +106,11 @@ ConnectCas.prototype.core = function() {
 
     if (options.restletIntegration) {
       if (options.paths.restletIntegration) {
+        req.clearRestlet = clearRestletTGTs.bind(null, options, logger);
+
         for (var i in options.restletIntegration) {
           if (options.restletIntegration[i] && typeof options.restletIntegration[i].trigger === 'function' && options.restletIntegration[i].trigger(req)) {
             matchedRestletIntegrateRule = i;
-            req.clearRestlet = clearRestletTGTs.bind(null, options, logger);
             break;
           }
         }
@@ -108,16 +119,45 @@ ConnectCas.prototype.core = function() {
       }
     }
 
-    if (options.paths.proxyCallback) {
-      req.getProxyTicket = function(targetService, disableCache, callback) {
-        return matchedRestletIntegrateRule ? getProxyTicketThroughRestletReq.call(that, req, targetService, matchedRestletIntegrateRule, options.restletIntegration[matchedRestletIntegrateRule], logger, typeof disableCache === 'function' ? disableCache : callback) :
-          getProxyTicket.call(that, req, targetService, disableCache, logger, callback);
-      };
+    /**
+     *
+     * @param {String}     targetService  (Required) targetService for this proxy ticket
+     * @param {Object}    [proxyOptions] (Optional) If this option is true, will force to request a new proxy ticket, ignore the cahce.
+     *                                              Otherwise, whether to use cache or not depending on the options.cache.enable
+     * @param {Function}  callback
+     * @returns {*}
+     */
+    req.getProxyTicket = function(targetService, proxyOptions, callback) {
+
+      if (typeof proxyOptions === 'function') {
+        callback = proxyOptions;
+        proxyOptions = {
+          disableCache: false
+        };
+      }
+
+      proxyOptions.targetService = targetService;
+
+      if (options.paths.proxyCallback) {
+        matchedRestletIntegrateRule ? getProxyTicketThroughRestletReq.call(that, req, targetService, {
+          name: matchedRestletIntegrateRule,
+          params: options.restletIntegration[matchedRestletIntegrateRule].params
+        }, callback) :
+          getProxyTicket.call(that, req, proxyOptions, callback);
+      } else {
+        logger.warn('options.paths.proxyCallback is not set, CAS is on non-proxy mode, you should not request a proxy ticket for non-proxy mode!');
+        // TODO: Should this throw an error?
+        // new Error('options.paths.proxyCallback is not set, CAS is on non-proxy mode, you should not request a proxy ticket for non-proxy mode!'
+        callback();
+      }
+    };
+
+    if (matchedRestletIntegrateRule) {
+      logger.info('Match restlet integration rule: ', matchedRestletIntegrateRule);
+      return next();
     }
 
-    if (matchedRestletIntegrateRule) return next();
-
-    if (utils.shouldIgnore(req, options)) return next();
+    if (utils.shouldIgnore(req, options, logger)) return next();
 
     if (method === 'GET') {
       switch (pathname) {
@@ -128,7 +168,8 @@ ConnectCas.prototype.core = function() {
         default:
           return authenticate(req, res, next, options, logger);
       }
-    } else if (method === 'POST' && pathname === options.paths.validate && options.slo) {
+    }
+    else if (method === 'POST' && pathname === options.paths.validate && options.slo) {
       return slo(req, res, next, options, logger);
     }
 
@@ -157,19 +198,8 @@ ConnectCas.prototype.logout = function() {
   };
 };
 
-ConnectCas.prototype.getPath = function(name, req) {
-  return utils.getPath(name, this.options, req);
-};
-
-ConnectCas.prototype.destroyRestletIntegrations = function() {
-  var stores = globalStoreCache.getAll();
-
-  for (var i in stores) {
-    utils.deleteRequest(utils.getPath('restletIntegration') + '/' + stores[i], function(err, response) {
-      if (err || !response || response.statusCode != 200 || response.status != 200) return console.error('Error when delete restletIntegartion-created TGT!');
-      console.log('Delete restletIntegartion-created TGT succeed!', stores[i]);
-    });
-  }
+ConnectCas.prototype.getPath = function(name) {
+  return utils.getPath(name, this.options);
 };
 
 module.exports = ConnectCas;

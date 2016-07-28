@@ -8,7 +8,6 @@
   "dependencies": {
     "lodash": "^4.13.1",
     "query-string": "^4.1.0",
-    "urllib-sync": "^1.1.3",
     "xml2js": "^0.4.16"
   },
   "description": "NodeJS implement of CAS(Central Authentication Service) client.",
@@ -20,8 +19,11 @@
     "express": "^4.13.4",
     "express-session": "^1.13.0",
     "istanbul": "^0.4.4",
+    "lodash": "^4.13.1",
     "mocha": "^2.5.3",
-    "session-memory-store": "^0.2.1"
+    "rewire": "^2.5.2",
+    "session-memory-store": "^0.2.1",
+    "uuid": "^2.0.2"
   },
   "directories": {
     "lib": "./lib"
@@ -41,7 +43,8 @@
     "url": "git+https://github.com/xiaoyuze88/connect-cas2.git"
   },
   "scripts": {
-    "start": "node ./example"
+    "start": "node ./example",
+    "test": "istanbul cover _mocha -- -R spec"
   },
   "version": "1.1.20-beta"
 }
