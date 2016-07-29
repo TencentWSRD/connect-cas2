@@ -262,6 +262,39 @@ app.get('/logout', function(req, res) {
 
 任何一条规则匹配都将直接不使用缓存。规则匹配规则同`options.ignore`。
 
+#### options.restletIntegration {Object} (Optional, defualt: {})
+配置你的restlet integration。
+
+当使用restlet integraion时, 用户不需要登录, 并且能够通过访问一个CAS Server的特殊接口获取一个特殊的PGT, 用这个PGT可以向CAS Server换取PT, 并与特殊的一个后端服务交互数据.
+
+options.restletIntegration是一个对象, 其中key代表的特定的restlet integration的规则名, value是一个对象, 需要包含两个属性: trigger {Function}, params {Object},
+
+其中trigger决定了是否使用该条规则的参数来获取PGT, params决定了要向接口传递什么参数. 
+
+对于使用restlet integration的PGT获取PT的过程用户不需要关注, 仍与调普通后端接口一样先用req.getProxyTicket获取pt, 再发送请求即可.
+
+对于我们自己的使用场景, 是用于设置DEMO产品. 当用户访问特定DEMO产品时, trigger中判断访问的路径与产品Id, 匹配时trigger返回true, 然后在调用req.getProxyTicket时会自动去获取PGT, 然后自动换PT, 与普通接口一样使用.
+
+Example:
+
+```javascript
+options.restletIntegration: {
+  demo1: {
+    trigger: function(req) {
+      // Decision whether to use restlet integration, when matched, return true.
+      // Then CAS will not force the user to login, but can get a PT and interacted with the specific back-end service that support restlet integration by a special PGT. 
+      // return false
+    },
+    // Parameters that will send to CAS server to get a special PGT
+    params: {
+      username: 'restlet username',
+      from: 'http://localhost:3000/cas/validate',
+      password: 'restlet password'
+    }
+  }
+}
+```
+
 #### options.logger {Function} (Optional)
 一个自定义logger的工厂函数。接受两个参数 `req`与`type`，`req`是Express的Response对象，`type`是一个字符串，为这三个之一： 'log', 'error', 'warn'。
 

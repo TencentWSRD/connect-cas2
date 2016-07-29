@@ -72,10 +72,10 @@ module.exports = function(app, casOptions, hookBeforeCasConfig, hookAfterCasConf
       header: 'x-client-ajax',
       status: 418
     },
-    // logger: function(req, type) {
-    //   return function() {
-    //   };
-    // },
+    logger: function(req, type) {
+      return function() {
+      };
+    },
     restletIntegration: {
       demo1: {
         trigger: function(req) {

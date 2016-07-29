@@ -3,8 +3,6 @@ var expect = require('chai').expect;
 
 var Express = require('express');
 
-var appConfig = require('../example/appConfig');
-
 var url = require('url');
 var http = require('http');
 var https = require('https');
