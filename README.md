@@ -1,14 +1,33 @@
 [![Build Status](https://travis-ci.org/TencentWSRD/connect-cas2.svg?branch=master)](https://travis-ci.org/TencentWSRD/connect-cas2)
+[![Coverage Status](https://coveralls.io/repos/github/TencentWSRD/connect-cas2/badge.svg?branch=master)](https://coveralls.io/github/TencentWSRD/connect-cas2?branch=master)
 
 # connect-cas2
 
-A complete implement of CAS Client on NodeJS, support CAS 2.0+ protocol.
+A complete implement of CAS Client middleware for Express/Connect, support CAS 2.0+ protocol.
+
+CAS(Central Authentication Service) is a single-sign-on / single-sign-off protocol for the web.
+
+We suppose you are already familiar with the CAS protocol, if not, please read this [document](https://github.com/apereo/cas/blob/master/cas-server-documentation/protocol/CAS-Protocol-Specification.md) before you use this.
+
+[中文文档](https://github.com/TencentWSRD/connect-cas2/blob/master/README.zh.md)
 
 ## Install
 
     npm install connect-cas2
 
+## Feature
+
+1. Non-proxy mode CAS login/logout
+2. Proxy mode CAS login/logout, get proxy ticket
+3. Single sign off
+4. Restlet integration supported
+
 ## Quick start
+
+Notice:
+
+1. You must use `express-session` middleware before the casClient.core() middleware.
+2. If you want to enable slo(single sign logout) feature, you need to use casClient.core() middleware before `bodyParser`, because the SLO need to access a POST request's raw body from CAS server.
 
 ```javascript
 var express = require('express');
@@ -33,8 +52,8 @@ var casClient = new ConnectCas({
       /\/ignore/
     ],
     match: [],
-    servicePrefix: 'http://10.17.86.87:8080',
-    serverPath: 'http://rdmdev.oa.com',
+    servicePrefix: 'http://localhost:3000',
+    serverPath: 'http://your-cas-server.com',
     paths: {
       validate: '/cas/validate',
       serviceValidate: '/buglycas/serviceValidate',
@@ -46,9 +65,9 @@ var casClient = new ConnectCas({
     redirect: false,
     gateway: false,
     renew: false,
-    ssoff: true,
+    slo: true,
     cache: {
-      enable: true,
+      enable: false,
       ttl: 5 * 60 * 1000,
       filter: []
     },
@@ -59,6 +78,11 @@ var casClient = new ConnectCas({
 });
 
 app.use(casClient.core());
+
+// NOTICE: If you want to enable single sign logout, you must use casClient middleware before bodyParser.
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
 app.get('/logout', casClient.logout());
 
 // or do some logic yourself
@@ -80,23 +104,25 @@ var casClient = new CasClient(options);
 
 #### options.serverPath {String} (Required)
 
-The path of your CAS server. For example: https://www.your-cas-server-path.com/cas
+The root path of your CAS server. For example: https://www.your-cas-server-path.com
+
+For example: If you set `options.paths.login` to '/cas/login', `options.serverPath` to 'https://www.your-cas-server-path.com', then the CAS server login path will be 'https://www.your-cas-server-path.com/cas/login'.
 
 #### options.servicePrefix {String} (Required)
 
-The root path of your CAS client(Your website).
+The root path of your CAS client(Your website root).
 
 Every paths that for your CAS client will use this path as the root path.
 
-For example: We will send `${options.servicePrefix}${options.paths.validate}` as `service` parameter to the login page. Then after login CAS server will redirect to `${options.servicePrefix}${options.paths.validate}` to validate the ST.
+For example: If you set `options.paths.validate` to '/cas/validate', `options.servicePrefix` to 'http://localhost:3000', then the client side validate path will be 'http://localhost:3000/cas/validate'.
 
 #### options.ignore {Array} (Optional, default: [])
 
-In some cases, you don't need all request to be authenticated by the CAS. So you can set the ignore rules, when some rules matched, we will simply call the `next()` function and do nothing.
+In some cases, you don't need all request to be authenticated by CAS. So you can set the ignore rules, when some rules matched, the casClient.core middleware will go next and do nothing.
 
-We support String rules, RegExp rules and Function rules.
+Rules here support String/RegExp/Function.
 
-For example, we checked the rules like:
+Under the hook, we checked the rules like:
 
 1. String rules:
 
@@ -112,29 +138,48 @@ if (regRule.test(req.path)) next();
 
 3. Function rules:
 ```javascript
-if (funcRule(req.path, req)) next();
+if (functionRule(req.path, req)) next();
 ```
 
-#### options.match {Array} (Optional, default: [])
-If you set this option, only the paths that matched one of the rules will go into CAS middleware. All rules works just like `options.ignore`.
+So you could config which specific path you need to ignore by the CAS authentication.
 
-#### options.paths {Object} (Optional, default: {})
-Relative paths to specific all functional paths to the CAS protocol. If you havn't modified the APIs of your CAS server, you may don't need to set this option. (In proxy mode, you must set the options.paths.proxyCall)
+#### options.match {Array} (Optional, default: []) (Not recommend)
+If you set this option, only the paths that matched one of the rules will go into CAS middleware.
+
+All rules works as above.
+
+#### options.paths {Object} (Optional)
+Relative paths to all functional paths for the CAS protocol.
+
+All paths for CAS Server is depending on your CAS server.
 
 #### options.paths.validate (String) (Optional, default: '/cas/validate')
 (For CAS Client)
 
-The path you want your CAS client to validate ST from the CAS server. And we'll use `${options.servicePrefix}${options.paths.validate}` as `service` parameter to any CAS server's APIs that need this `service`.
+The path you want your CAS client to validate a ticket from CAS server.
+
+We'll use `${options.servicePrefix}${options.paths.validate}` as `service` parameter to any CAS server's APIs that need this parameter, for example: casServer/cas/login, casServer/cas/serviceValidate,
+
+#### options.paths.proxyCallback (String) (Optional, default: '')
+(For CAS Client)
+
+In proxy mode, setting this path means you want this path of your CAS Client to receive the callback from CAS Server(Proxy mode) to receive the PGTIOU and PGTID.
+
+This could be a relative path like the others, or it can also be a absolute path.
+
+In none-proxy mode, don't set this option!
+
+[Read this for more information about proxy mode](https://github.com/apereo/cas/blob/master/cas-server-documentation/protocol/CAS-Protocol-Specification.md#254-proxy-callback)
 
 #### options.paths.serviceValidate (String) (Optional, default: '/cas/serviceValidate')
 (For CAS Server)
 
-The path your CAS Server validate a ST. CAS client will send request to `${options.servicePrefix}${options.paths.serviceValidate}` to validate a ST.
+The path your CAS Server validate a ticket(ST).
 
 #### options.paths.proxy (String) (Optional, default: '/cas/proxy')
 (For CAS Server)
 
-In proxy mode, you need a PGT(proxy granting ticket) to communicate with other server, you can get a PGT form this path: `${options.servicePrefix}${options.paths.proxy}`.
+The path we'll ask CAS Server to get a PT(proxy ticket) to communicate with any other back-end service.
 
 #### options.paths.login (String) (Optional, default: '/cas/login')
 (For CAS Server)
@@ -146,21 +191,21 @@ The login path of your CAS server.
 
 The logout path of your CAS server.
 
-#### options.paths.proxyCallback (String) (Optional, default: '')
-(For CAS Client)
-In proxy mode, setting this path means you want this path of your CAS Client to receive the callback from CAS Server(Proxy mode) to receive the PGTIOU and PGTID.
-
-In none-proxy mode, don't set this option!
-
 #### options.fromAjax {Object} (Optional, default: {})
-Because an AJAX request can't notice 302 redirect response, and will directly redirect without telling you anything.
+When your user's authentication is expired, all request send to CAS client will redirect to the CAS login path.
 
-So when your user's authentication is expired, and your CAS Client and CAS Server is not in the same domain, (In most cases they won't be the same domain) when they send an AJAX request, oops, an not-allowed-cross-domain exception will occur!
+So image this situation, when you're sending an Ajax request to a CAS client, meanwhile your authentication is expired, besides your CAS Client and CAS Server is not in the same domain, an CROS error will happen.
 
-To prevent this embarrassing situation, we add this option.
+This situation is difficult to handle, because an AJAX request can't notice 302 redirect response, and it will directly redirect without telling you anything.
+
+And for the reason of preventing this embarrassing situation, we add this option.
 
 #### options.fromAjax.header {String} (Optional, default: 'x-client-ajax')
-CAS will assume all request with header: 'x-client-ajax' is an AJAX request, so when user's authentication expired, CAS won't redirect to the login page, but send back the specified status code that you set as `options.fromAjax.status`.
+CAS will assume all request with header: 'x-client-ajax' is an AJAX request, so when user's authentication expired, CAS won't redirect to the login page, but send back the specified http status code that you set as `options.fromAjax.status`.
+
+For example:
+
+If you set `options.fromAjax.header` to 'x-client-ajax', you should add a header like: 'x-client-ajax: 1' to your request, and CAS client will notice that this is an AJAX request.
 
 #### options.fromAjax.status {Number} (Optional, default: 418)
 As introduced before, when user's authentication expired, CAS won't redirect to the login page, but send back this as http status code.
@@ -172,32 +217,114 @@ For example:
        status: 418
     };
 
-So what you need to do in your browser code is you should handle this situation, when status code is 418, you should do `window.location.reload()` or something else to let your user reauthenticate.
+So what you need to do in your browser's code is:
 
-#### options.debug {Boolean} (Optional, default: false)
-For debug usage, we will log every step when CAS client is interacting with CAS server.
+1. Add `'x-client-ajax': 1` header on all your AJAX request header
+2. You should handle this situation, when the response status code is 418, you should do `window.location.reload()` or something else to let your user reauthenticate.
+
+#### options.debug {Boolean} (Deprecated)
+Because CAS protocol is complicated, we remove this option. We recommend you to always log every step that what CAS client do on your production environment.
+
+In production environment, it's recommended to setup your own logger by options.logger.
 
 #### options.redirect(req, res) {Function} (Optional, default: null)
-Change the default behaviour that after user login or login failed, CAS redirect to the last url.
+The default behaviour that when a user login or login failed, CAS client will redirect the user to the last url the user visited.
 
-If you return `true` from this redirect function, then CAS won't redirect to the last url, (So make sure you send a response in your function.)
-otherwise, CAS just keep the same logic that will redirect to the last url after user login or login failed.
+Setting up this option to change this behavior, if you return `true` from this redirect function, then CAS won't redirect to the last url, (So make sure you send a response in your function.)
+
+For example, on some pages, you don't want redirect the user to the login page after they logout.
+
+By default, after a user logout, CAS client will redirect the user to `${serverPath}${paths.logout}?service=${servicePrefix}${paths.validate}`, and after logout on CAS server,
+it will redirect to `${servicePrefix}${paths.validate}`, then redirect to `${serverPath}${paths.login}` to let the user to login again.
+
+So, on those pages, you can set a key in cookies when your user want to logout, then check this value in cookie in the `options.redirect` function, if match, return `true` in that function and redirect the user to wherever you want.
+
+```javascript
+
+var options = {
+  redirect: function(req, res) {
+    if (req.cookies.logoutFrom) {
+      // Use relative path for security purpose.
+      res.redirect(302, url.parse(req.cookies.logoutFrom).pathname);
+      return true;
+    }
+  }
+};
+
+var casClient = new CasClient(options)
+
+app.get('/logout', function(req, res) {
+  var fromWhere = req.get('Referer');
+  var fromWhereUri = url.parse(fromWhere);
+  if (fromWhereUri.pathname.match(/the page you dont want user to login after logout/)) {
+    res.cookie('logoutFrom', fromWhereUri.pathname);
+  }
+  casClient.logout()(req, res);
+});
+
+````
 
 #### options.cache {Object} (Optional) `Since v1.1.0-beta`
-Works in PROXY-MODE ONLY!
+(Works in PROXY-MODE ONLY)
 
-If you don't want to request a proxy-ticket every time you interact with your server, you can set this options to `enable=true`.
-(NOTICE!! You must make sure the server you want to interact already set the PT cacheable, or using an PT that cached in your CAS client won't work!)
+If your back-end service already enable PT cache, you can set options to `options.cache.enable=true`, then before this PT expired, CAS client will use this PT directly and won't request to /cas/proxy to fetch a new one.
+
+Be aware that the ttl of your cache PT should be shorter than that on your back-end service.
+
+When a PT is expired on your service but is still available on your client, using that expired PT to request to you back-end service, you will receive response status code of 401.
+
+In case of this situation, you should check the response code from your back-end service, when it's 401, manually refetch a new PT by calling `req.getProxyTicket(targetService, {renew: true}, callback)`.
+
+For more example, see the `req.getProxyTicket` below.
+
+(NOTICE!! You must make sure the server you want to interact already set the PT cacheable, otherwise using an PT that cached in your CAS client only won't work!)
 
 #### options.cache.enable {Boolean} (Optional, defualt: false)
+As said above, set this to `true` will enable the PT cache, make sure your back-end service already enable the PT cache.
 
 #### options.cache.ttl {Number} (Optional, default: 300000 , in millisecond )
-How long will the PT be cached.
+How long will the PT be expired, should be shorter than that on your back-end service.
 
 #### options.cache.filter {Array} (Optinal, default: [])
-In some cases, not every servers you want to interact enabled cacheable PT, so you can set the filter rules here, if one rule matchs the service url, it's PT won't be cached.
+In some cases, not every servers you want to interacted have enabled PT cache, so you can set the filter rules here, if one rule matchs the service url, it's PT won't be cached.
 
-Every rule works like the `options.ignore`.
+Every rule works like the `options.ignore`. If any rules matched, CAS client will request a new PT when you call `req.getProxyTicket`.
+
+#### options.logger {Function} (Optional)
+Customized logger factory function. Will be called like: `logger(req, type)`, `req` is the Response object, and the type is one of these log types: 'log', 'error', 'warn'.
+
+The logger factory should return a log function, for example: `options.logger = (req, type) => return console[type].bind(console[type])`
+
+In production environment, maybe you want to customize the format/content/output of the log by using log4js/winston and so on.
+
+In our cases, we also print the user information in each log for convenient to trace issues, that's why we pass `req` object to the factory function.
+
+Here's how we setup our production environment's log:
+
+```javascript
+app.use((req, res, next) => {
+  req.sn = uuid.v4();
+  function getLogger(type = 'log', ...args) {
+    let user = 'unknown';
+    try {
+      user = req.session.cas.user;
+    } catch(e) {}
+
+    return console[type].bind(console[type], `${req.sn}|${user}|${req.ip}|`, ...args);
+  }
+
+  req.getLogger = getLogger;
+});
+
+var casClient = new CasClient({
+  logger: (req, type) => {
+    return req.getLogger(type, '[CONNECT_CAS]: ');
+  }
+});
+
+app.use(casClient.core());
+
+```
 
 ### METHOD
 
@@ -212,34 +339,52 @@ Return a middleware that handles the logout action.
 
 Use it like `app.get('/logout', casClient.logout())`. It will destroy the session of current user and then redirect to the CAS server logout page.
 
-#### req.getProxyTicket(servicePath, [disableCache], callback)
-If you setup options.paths.proxyCallback, CAS middleware will add a function called `getProxyTicket` on the request object, so you can access that by callback `req.getProxyTicket`.
+In most cases, you want to do something else before actually logout, so use it like:
 
-`servicePath` is the service path you want to interact with.
+```javascript
+  app.get('/logout', function(req, res) {
+    // Do your logic here, then call the logout middle
+    casClient.logout()(req, res)
+  });
 
-`disableCache` {Boolean} (optional) When you setup PT cache, then you get a cached PT from `getProxyTicket`, but somehow the service validate this cached PT failed. In that case, you need to call this function again with setting this param to `true`.
+```
 
-`callback(err, pt)`
+#### req.getProxyTicket(targetService, [proxyOptions], callback)
+After using casClient.core() middleware, you can access a `getProxyTicket` function via the `req` object.
+
+When you're using proxy-mode, you can use this method to get a PT to interacted to another back-end service.
+
+(Notice: if you're not in proxy-mode, calling this method it will directly call the callback and returns nothing.)
+
+`targetService` is the absolute back-end service path you want to interact with. You should know that which CAS client that your back-end service is using, this path should be their validate path.
+For example, if they're using connect-cas2 too, this should be their `${options.servicePrefix}${options.paths.validate}`.
+
+`proxyOptions` {Object}        (Optional) Options.
+
+`proxyOptions.disableCache`    {Boolean} If set to true, it will ignore the cached PT(If you enable PT cache) and to request a new one.
+`proxyOptions.renew`           {Boolean} If set to true, it will ignore the cached PT(If you enable PT cache) and to request a new one, then set this to cache.
 
 Example:
 ```javascript
    app.get('/api', function(req, res) {
      var service = 'http://your-service.com';
-     req.getProxyTicket(service + '/cas', function(err, pt) {
+     req.getProxyTicket(service + '/cas', function ptCallback(err, pt) {
        if (err) return res.status(401).send('Error when requesting PT, Authentication failed!');
 
-       request.get(service + '/api/someapi?ticket=' + 'pt', function(err, response) {
+       request.get(service + '/api/someapi?ticket=' + 'pt', function (err, response) {
+          if (err) return res.sendStatus(500);
+
+          // If you enable PT cache, and they're expired on your back-end service
+          if (response.status == 401) {
+            // Be carefule the retry loop
+            return req.getProxyTicket(service + '/cas', {renew: true}, ptCallback);
+          }
+
           res.send(response);
        });
      });
    });
 ```
-
-### PROXY MODE
-In proxy mode, before you want to interact with your server, you need to request a ticket from CAS server.
-
-### NONE-PROXY MODE
-In none-proxy mode, don't set options.paths.proxyCallback, when all middle-ware passed, that means the login succeed.
 
 ## More
 

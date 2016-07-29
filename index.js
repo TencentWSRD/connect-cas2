@@ -10,10 +10,9 @@ var PTStroe = require('./lib/ptStroe');
 var utils = require('./lib/utils');
 var clearRestletTGTs = require('./lib/clearRestletTGTs');
 var url = require('url');
-var globalStoreCache = require('./lib/globalStoreCache');
+var deprecate = require('deprecate');
 
 var DEFAULT_OPTIONS = {
-  debug: false,
   ignore: [],
   match: [],
   servicePrefix: '',
@@ -40,24 +39,26 @@ var DEFAULT_OPTIONS = {
     header: 'x-client-ajax',
     status: 418
   },
-  // demo:
-  // [{
-  //   trigger: function(req) {
-  //     return false;
-  //   },
-  //   params: {
-  //     username: '',
-  //     password: ''
-  //   }
-  // }]
   restletIntegration: {}
 };
 
 function ConnectCas(options) {
+  /* istanbul ignore if */
   if (!(this instanceof ConnectCas)) return new ConnectCas(options);
 
   this.options = _.merge({}, DEFAULT_OPTIONS, options);
 
+  /* istanbul ignore if */
+  if (this.options.ssoff) {
+    deprecate('options.ssoff is deprecated, use option.slo instead.');
+    this.options.slo = this.options.ssoff;
+  }
+
+  if (this.options.debug) {
+    deprecate('options.debug is deprecated, please control the console output by a custom logger.');
+  }
+
+  /* istanbul ignore if */
   if (!this.options.servicePrefix || !this.options.serverPath) throw new Error('Unexpected options.service or options.serverPath!');
 
   if (this.options.cache && this.options.cache.enable) {
@@ -66,11 +67,6 @@ function ConnectCas(options) {
       logger: this.options.logger
     });
   }
-
-
-  this.logger = this.options.logger || function(req, type) {
-      return console[type].bind(console[type]);
-    };
 
   if (this.options.renew || this.options.gateway) {
     console.warn('options.renew and options.gateway is not implement yet!');
@@ -81,9 +77,6 @@ function ConnectCas(options) {
   this.proxyCallbackPathName = (pgtURI.protocol && pgtURI.host) ? pgtURI.pathname : this.options.paths.proxyCallback;
 }
 
-ConnectCas.prototype.LoggerFactory = function() {
-};
-
 ConnectCas.prototype.core = function() {
   var options = this.options;
   var that = this;
@@ -92,15 +85,9 @@ ConnectCas.prototype.core = function() {
     if (!req.sessionStore) throw new Error('You must setup a session store before you can use CAS client!');
     if (!req.session) throw new Error('Unexpected req.session ' + req.session);
 
+    var logger = utils.getLogger(req, options);
     var pathname = req.path;
     var method = req.method;
-
-    var logger = {
-      info: that.logger(req, 'log'),
-      error: that.logger(req, 'error'),
-      warn: that.logger(req, 'warn'),
-      log: that.logger(req, 'log')
-    };
 
     var matchedRestletIntegrateRule;
 
@@ -124,6 +111,12 @@ ConnectCas.prototype.core = function() {
      * @param {String}     targetService  (Required) targetService for this proxy ticket
      * @param {Object}    [proxyOptions] (Optional) If this option is true, will force to request a new proxy ticket, ignore the cahce.
      *                                              Otherwise, whether to use cache or not depending on the options.cache.enable
+     * @param {String}    proxyOptions.targetService   (Required)
+     * @param {Boolean}   proxyOptions.disableCache    Whether to force disable cache and to request a new one.
+     * @param {String}    proxyOptions.specialPgt      Use this pgt to request a PT, instead of req.session.cas.pgt
+     * @param {Boolean}   proxyOptions.renew           Don't use cache, request a new one, reset it to cache
+     * @param {Function}  proxyOptions.retryHandler    When trying to fetch a PT failed due to authentication issue, this callback will be called, it will receive one param `error`, which introduce the fail reason.
+     *                                                 Be careful when you setting up this option because it might occur an retry loop.
      * @param {Function}  callback
      * @returns {*}
      */
@@ -133,6 +126,10 @@ ConnectCas.prototype.core = function() {
         callback = proxyOptions;
         proxyOptions = {
           disableCache: false
+        };
+      } else if (typeof proxyOptions === 'boolean') {
+        proxyOptions = {
+          disableCache: proxyOptions
         };
       }
 
@@ -157,20 +154,20 @@ ConnectCas.prototype.core = function() {
       return next();
     }
 
-    if (utils.shouldIgnore(req, options, logger)) return next();
+    if (utils.shouldIgnore(req, options)) return next();
 
     if (method === 'GET') {
       switch (pathname) {
         case options.paths.validate:
-          return validate(req, res, next, options, logger);
+          return validate(req, res, next, options);
         case that.proxyCallbackPathName:
-          return proxyCallback(req, res, next, options, logger);
+          return proxyCallback(req, res, next, options);
         default:
-          return authenticate(req, res, next, options, logger);
+          return authenticate(req, res, next, options);
       }
     }
     else if (method === 'POST' && pathname === options.paths.validate && options.slo) {
-      return slo(req, res, next, options, logger);
+      return slo(req, res, next, options);
     }
 
     next();
@@ -180,7 +177,7 @@ ConnectCas.prototype.core = function() {
 ConnectCas.prototype.logout = function() {
   var options = this.options;
 
-  return function(req, res, next) {
+  return function(req, res) {
     if (!req.session) {
       return res.redirect('/');
     }

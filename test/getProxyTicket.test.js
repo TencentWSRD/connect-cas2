@@ -186,6 +186,189 @@ describe('能够正确获取proxy ticket', function() {
     })
   });
 
+  it('登陆成功后能够成功获取pt,使用缓存, 但是设置disableCache, 再次请求的pt应与上一次不同', function(done) {
+    hookAfterCasConfig = function(req, res, next) {
+      if (req.path === '/') {
+        req.getProxyTicket('xxx', function(err, pt) {
+          if (err) throw err;
+
+          res.send(pt);
+        })
+      } else if (req.path === '/noCache') {
+        req.getProxyTicket('xxx', {
+          disableCache: true
+        }, function(err, pt) {
+          if (err) throw err;
+
+          res.send(pt);
+        })
+      } else if (req.path === '/noCache/old') {
+        req.getProxyTicket('xxx', true, function(err, pt) {
+          if (err) throw err;
+
+          res.send(pt);
+        })
+      } else {
+        next();
+      }
+    };
+
+    utils.getRequest(casRootPath + '/cas/login?service=' + encodeURIComponent(clientPath + '/cas/validate'), function(err, response) {
+      if (err) throw err;
+
+      expect(response.status).to.equal(302);
+
+      var redirectLocation = response.header.location;
+      var cookies;
+
+      utils.getRequest(redirectLocation, function(err, response) {
+        if (err) throw err;
+
+        cookies = handleCookies.setCookies(response.header);
+
+        expect(response.status).to.equal(302);
+        expect(response.header.location).to.equal('/');
+
+        utils.getRequest(clientPath + '/', {
+          headers: {
+            Cookie: handleCookies.getCookies(cookies)
+          }
+        }, function(err, response) {
+          if (err) throw err;
+
+          expect(response.status).to.equal(200);
+          expect(response.body).to.not.be.empty;
+
+          var pt = response.body;
+
+          utils.getRequest(clientPath + '/noCache', {
+            headers: {
+              Cookie: handleCookies.getCookies(cookies)
+            }
+          }, function(err, response) {
+            if (err) throw err;
+
+            expect(response.status).to.equal(200);
+            expect(response.body).to.not.be.empty;
+
+            expect(response.body).to.not.equal(pt);
+
+            utils.getRequest(clientPath + '/noCache/old', {
+              headers: {
+                Cookie: handleCookies.getCookies(cookies)
+              }
+            }, function(err, response) {
+              if (err) throw err;
+
+              expect(response.status).to.equal(200);
+              expect(response.body).to.not.be.empty;
+
+              expect(response.body).to.not.equal(pt);
+
+              done();
+            })
+          })
+        })
+      });
+    })
+  });
+
+  it('登陆成功后能够成功获取pt,使用缓存, 设置renew, 再次请求的pt应与上一次不同, 再下一次与上一次相同', function(done) {
+    hookAfterCasConfig = function(req, res, next) {
+      if (req.path === '/') {
+        req.getProxyTicket('xxx', function(err, pt) {
+          if (err) throw err;
+
+          res.send(pt);
+        })
+      } else if (req.path === '/renew') {
+        req.getProxyTicket('xxx', {
+          renew: true
+        }, function(err, pt) {
+          if (err) throw err;
+
+          res.send(pt);
+        })
+      } else {
+        next();
+      }
+    };
+
+    utils.getRequest(casRootPath + '/cas/login?service=' + encodeURIComponent(clientPath + '/cas/validate'), function(err, response) {
+      if (err) throw err;
+
+      expect(response.status).to.equal(302);
+
+      var redirectLocation = response.header.location;
+      var cookies;
+
+      utils.getRequest(redirectLocation, function(err, response) {
+        if (err) throw err;
+
+        cookies = handleCookies.setCookies(response.header);
+
+        expect(response.status).to.equal(302);
+        expect(response.header.location).to.equal('/');
+
+        utils.getRequest(clientPath + '/', {
+          headers: {
+            Cookie: handleCookies.getCookies(cookies)
+          }
+        }, function(err, response) {
+          if (err) throw err;
+
+          expect(response.status).to.equal(200);
+          expect(response.body).to.not.be.empty;
+
+          var pt = response.body;
+
+          utils.getRequest(clientPath + '/', {
+            headers: {
+              Cookie: handleCookies.getCookies(cookies)
+            }
+          }, function(err, response) {
+            if (err) throw err;
+
+            expect(response.status).to.equal(200);
+            expect(response.body).to.not.be.empty;
+
+            expect(response.body).to.equal(pt);
+
+            utils.getRequest(clientPath + '/renew', {
+              headers: {
+                Cookie: handleCookies.getCookies(cookies)
+              }
+            }, function(err, response) {
+              if (err) throw err;
+
+              expect(response.status).to.equal(200);
+              expect(response.body).to.not.be.empty;
+
+              expect(response.body).to.not.equal(pt);
+
+              pt = response.body;
+
+              utils.getRequest(clientPath + '/', {
+                headers: {
+                  Cookie: handleCookies.getCookies(cookies)
+                }
+              }, function(err, response) {
+                if (err) throw err;
+
+                expect(response.status).to.equal(200);
+                expect(response.body).to.not.be.empty;
+
+                expect(response.body).to.equal(pt);
+                done();
+              })
+            })
+
+          })
+        })
+      });
+    })
+  });
+
   it('登陆成功后能够成功获取pt,不使用缓存, 再次请求的pt应与上一次不同', function(done) {
     var cookies = {};
 

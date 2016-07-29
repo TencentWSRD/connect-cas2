@@ -6,6 +6,7 @@
     "url": "https://github.com/TencentWSRD/connect-cas2/issues"
   },
   "dependencies": {
+    "deprecate": "^0.1.0",
     "lodash": "^4.13.1",
     "query-string": "^4.1.0",
     "xml2js": "^0.4.16"
@@ -47,7 +48,7 @@
   },
   "scripts": {
     "start": "node ./example",
-    "test": "istanbul cover _mocha -- -R spec"
+    "test": "istanbul cover -x 'example/**' _mocha -- -R spec"
   },
-  "version": "1.1.21-beta"
+  "version": "1.1.21"
 }

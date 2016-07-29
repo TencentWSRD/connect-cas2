@@ -20,10 +20,7 @@ var _ = require('lodash');
  * @returns {*}
  */
 module.exports = function(app, casOptions, hookBeforeCasConfig, hookAfterCasConfig) {
-  app.use(bodyParser.json());
-  app.use(bodyParser.urlencoded({ extended: true }));
   app.use(cookieParser('here is some secret'));
-
   var MemoryStore = require('session-memory-store')(session);
 
   app.use(session({
@@ -48,7 +45,6 @@ module.exports = function(app, casOptions, hookBeforeCasConfig, hookAfterCasConf
   if (typeof hookBeforeCasConfig === 'function') hookBeforeCasConfig(app);
 
   var defaultOptions = {
-    debug: true,
     ignore: [
       /\/ignore/
     ],
@@ -112,6 +108,9 @@ module.exports = function(app, casOptions, hookBeforeCasConfig, hookAfterCasConf
   app.use(casClient.core());
 
   if (typeof hookAfterCasConfig === 'function') hookAfterCasConfig(app);
+
+  app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded({ extended: true }));
 
   // if (typeof hookAfterCasConfig === 'function') {
   //   console.log('hookAfterCasConfig', hookAfterCasConfig);

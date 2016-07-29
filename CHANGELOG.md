@@ -1,3 +1,7 @@
+1.1.21
+=================
+Change options.ssoff to options.slo
+
 1.1.21-beta
 =================
 * Add test code.

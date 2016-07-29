@@ -42,7 +42,6 @@ module.exports = function(app, casOptions, hookBeforeCasConfig, hookAfterCasConf
   if (typeof hookBeforeCasConfig === 'function') hookBeforeCasConfig(app);
 
   var defaultOptions = {
-    debug: true,
     ignore: [
       /\/ignore/
     ],

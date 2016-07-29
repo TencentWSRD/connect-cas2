@@ -8,8 +8,7 @@ test:
 	$(mocha) --timeout $(timeout) $(test)
 
 cov:
-	#$(istanbul) cover $(coverageMocha) -- -u exports $(test) --timeout $(timeout)
-	$(istanbul) cover $(coverageMocha) --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage
+	$(istanbul) cover -x "example/**" $(coverageMocha) --report lcovonly -- -R spec  && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage
 
 # 区分命令和文件名称
 .PHONY: test

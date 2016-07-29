@@ -19,6 +19,11 @@ describe('utils单元测试', function() {
     httpsPort = '3003',
     httpsLocalPath = 'https://localhost:3003';
 
+  var loggerFactory = function(req, type) {
+    return function() {
+    };
+  };
+
   before(function(done) {
     app = new Express();
 
@@ -179,78 +184,79 @@ describe('utils单元测试', function() {
       path: '/'
     };
 
-    function emptyLogger() {
-      return function() {
-      };
-    }
-
-    var logger = {
-      info: emptyLogger(),
-      error: emptyLogger(),
-      warn: emptyLogger(),
-      log: emptyLogger()
-    };
+    expect(utils.shouldIgnore(req, {
+      match: ['/'],
+      logger: loggerFactory
+    })).to.be.false;
 
     expect(utils.shouldIgnore(req, {
-      match: ['/']
-    }, logger)).to.be.false;
+      match: ['/api'],
+      logger: loggerFactory
+    })).to.be.true;
 
     expect(utils.shouldIgnore(req, {
-      match: ['/api']
-    }, logger)).to.be.true;
+      match: [/\//],
+      logger: loggerFactory
+    })).to.be.false;
 
     expect(utils.shouldIgnore(req, {
-      match: [/\//]
-    }, logger)).to.be.false;
-
-    expect(utils.shouldIgnore(req, {
-      match: [/\/api/]
-    }, logger)).to.be.true;
+      match: [/\/api/],
+      logger: loggerFactory
+    })).to.be.true;
 
     expect(utils.shouldIgnore(req, {
       match: [function(pathname, req) {
         return pathname === '/';
-      }]
-    }, logger)).to.be.false;
+      }],
+      logger: loggerFactory
+    })).to.be.false;
 
     expect(utils.shouldIgnore(req, {
       match: [function(pathname, req) {
         return pathname === '/api';
-      }]
-    }, logger)).to.be.true;
+      }],
+      logger: loggerFactory
+    })).to.be.true;
 
     expect(utils.shouldIgnore(req, {
-      ignore: ['/']
-    }, logger)).to.be.true;
+      ignore: ['/'],
+      logger: loggerFactory
+    })).to.be.true;
 
     expect(utils.shouldIgnore(req, {
-      ignore: ['/api']
-    }, logger)).to.be.false;
+      ignore: ['/api'],
+      logger: loggerFactory
+    })).to.be.false;
 
     expect(utils.shouldIgnore(req, {
-      ignore: [/\//]
-    }, logger)).to.be.true;
+      ignore: [/\//],
+      logger: loggerFactory
+    })).to.be.true;
 
     expect(utils.shouldIgnore(req, {
-      ignore: [/\/api/]
-    }, logger)).to.be.false;
+      ignore: [/\/api/],
+      logger: loggerFactory
+    })).to.be.false;
 
     expect(utils.shouldIgnore(req, {
       ignore: [function(pathname, req) {
         return pathname === '/';
-      }]
-    }, logger)).to.be.true;
+      }],
+      logger: loggerFactory
+    })).to.be.true;
 
     expect(utils.shouldIgnore(req, {
       ignore: [function(pathname, req) {
         return pathname === '/api';
-      }]
-    }, logger)).to.be.false;
+      }],
+      logger: loggerFactory
+    })).to.be.false;
 
     expect(utils.shouldIgnore(req, {
       ignore: [],
-      match: []
-    }, logger)).to.be.false;
+      match: [],
+      logger: loggerFactory
+    })).to.be.false;
   });
 
   it('getLastUrl能够正确的获取最后的访问路径, 并设置默认值', function() {
@@ -266,7 +272,8 @@ describe('utils单元测试', function() {
         logout: '/cas/logout',
         proxyCallback: '/cas/proxyCallback',
         restletIntegration: '/cas/v1/tickets'
-      }
+      },
+      logger: loggerFactory
     };
 
     expect(utils.getLastUrl({
