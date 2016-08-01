@@ -356,6 +356,14 @@ Example:
    });
 ```
 
+## CHANGE LOG
+[CHANGE LOG](https://github.com/TencentWSRD/connect-cas2/blob/master/CHANGELOG.md)
+
+## CONTRIBUTION
+新的代码变更请确保能够通过`npm run test`并且覆盖率达到90%+。
+
+测试使用的CAS Server是mock的, 如有新特性需要测试请先修改 `/test/lib/casServer.js`, 然后在`/test/casServer.test.js`中为新特性编写测试代码, 并且确认通过后再基于mock的Cas Server进行开发测试。
+
 ## More
 
 当前该项目已使用在我们的生产环境下，如果您在使用中发现任何问题，请提ISSUE，谢谢！
