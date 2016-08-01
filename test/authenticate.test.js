@@ -32,6 +32,16 @@ describe('校验判断登陆状态', function() {
         return function() {
         };
       },
+      hooks: {
+        before: function(req, res, next) {
+          req.start = Date.now();
+          next();
+        },
+        after: function(req, res, next) {
+          expect(req.start).to.not.be.empty;
+          next();
+        }
+      },
       paths: {
         proxyCallback: null
       }
@@ -52,6 +62,16 @@ describe('校验判断登陆状态', function() {
   it('proxy模型,session中无pt, 跳登录页', function(done) {
 
     casClientFactory(app, {
+      hooks: {
+        before: function(req, res, next) {
+          req.start = Date.now();
+          next();
+        },
+        after: function(req, res, next) {
+          expect(req.start).to.not.be.empty;
+          next();
+        }
+      },
       logger: function(req, type) {
         return function() {
         };
@@ -74,6 +94,16 @@ describe('校验判断登陆状态', function() {
     casClientFactory(app, {
       paths: {
         proxyCallback: null
+      },
+      hooks: {
+        before: function(req, res, next) {
+          req.start = Date.now();
+          next();
+        },
+        after: function(req, res, next) {
+          expect(req.start).to.not.be.empty;
+          next();
+        }
       },
       logger: function(req, type) {
         return function() {
@@ -109,6 +139,16 @@ describe('校验判断登陆状态', function() {
       // paths: {
       //   proxyCallback: null
       // },
+      hooks: {
+        before: function(req, res, next) {
+          req.start = Date.now();
+          next();
+        },
+        after: function(req, res, next) {
+          expect(req.start).to.not.be.empty;
+          next();
+        }
+      },
       logger: function(req, type) {
         return function() {
         };
@@ -138,11 +178,65 @@ describe('校验判断登陆状态', function() {
     });
   });
 
+  it('proxy模型,session中有st,无pgt,POST请求, 302', function(done) {
+    casClientFactory(app, {
+      // paths: {
+      //   proxyCallback: null
+      // },
+      hooks: {
+        before: function(req, res, next) {
+          req.start = Date.now();
+          next();
+        },
+        after: function(req, res, next) {
+          expect(req.start).to.not.be.empty;
+          next();
+        }
+      },
+      logger: function(req, type) {
+        return function() {
+        };
+      }
+    }, function(app) {
+      app.use(function(req, res, next) {
+        req.session.st = 'st';
+        req.session.cas = {
+          userId: '156260767'
+        };
+        req.session.save(function(err) {
+          if (err) throw err;
+          next();
+        });
+
+      });
+    });
+
+    app.post('/', function(req, res) {
+      res.send('ok');
+    });
+
+    utils.postRequest(reqUrl, {}, function(err, response) {
+      if (err) throw err;
+      expect(response.status).to.equal(302);
+      done();
+    });
+  });
+
   it('proxy模型,session中有st,有pgt,正常响应', function(done) {
     casClientFactory(app, {
       // paths: {
       //   proxyCallback: null
       // },
+      hooks: {
+        before: function(req, res, next) {
+          req.start = Date.now();
+          next();
+        },
+        after: function(req, res, next) {
+          expect(req.start).to.not.be.empty;
+          next();
+        }
+      },
       logger: function(req, type) {
         return function() {
         };
@@ -179,6 +273,16 @@ describe('校验判断登陆状态', function() {
         header: 'x-client-ajax',
         status: 418
       },
+      hooks: {
+        before: function(req, res, next) {
+          req.start = Date.now();
+          next();
+        },
+        after: function(req, res, next) {
+          expect(req.start).to.not.be.empty;
+          next();
+        }
+      },
       logger: function(req, type) {
         return function() {
         };
@@ -205,6 +309,16 @@ describe('校验判断登陆状态', function() {
       ignore: [
         '/'
       ],
+      hooks: {
+        before: function(req, res, next) {
+          req.start = Date.now();
+          next();
+        },
+        after: function(req, res, next) {
+          expect(req.start).to.not.be.empty;
+          next();
+        }
+      },
       logger: function(req, type) {
         return function() {
         };
@@ -227,6 +341,16 @@ describe('校验判断登陆状态', function() {
       ignore: [
         /\//
       ],
+      hooks: {
+        before: function(req, res, next) {
+          req.start = Date.now();
+          next();
+        },
+        after: function(req, res, next) {
+          expect(req.start).to.not.be.empty;
+          next();
+        }
+      },
       logger: function(req, type) {
         return function() {
         };
@@ -251,6 +375,16 @@ describe('校验判断登陆状态', function() {
           if (pathname === '/') return true;
         }
       ],
+      hooks: {
+        before: function(req, res, next) {
+          req.start = Date.now();
+          next();
+        },
+        after: function(req, res, next) {
+          expect(req.start).to.not.be.empty;
+          next();
+        }
+      },
       logger: function(req, type) {
         return function() {
         };

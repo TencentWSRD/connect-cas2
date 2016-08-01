@@ -39,6 +39,16 @@ describe('validate是否符合预期', function() {
       logger: function(req, type) {
         return function() {
         };
+      },
+      hooks: {
+        before: function(req, res, next) {
+          req.start = Date.now();
+          next();
+        },
+        after: function(req, res, next) {
+          expect(req.start).to.not.be.empty;
+          next();
+        }
       }
     }, function(app) {
       app.use(function(req, res, next) {
@@ -393,9 +403,8 @@ describe('validate是否符合预期', function() {
         paths: {
           proxyCallback: ''
         },
-        redirect: function(req, res) {
-          res.redirect(302, '/helloworld');
-          return true;
+        redirect: function(req) {
+          return '/helloworld';
         },
         logger: function(req, type) {
           return function() {
@@ -432,5 +441,67 @@ describe('validate是否符合预期', function() {
       });
     });
   });
+
+  it('hooks工作正常', function(done) {
+    casClientServer.close(function(err) {
+      if (err) throw err;
+
+      casClientApp = new Express();
+
+      casClientApp.get('/helloworld', function(req, res) {
+        res.send('ok');
+      });
+
+      casClientFactory(casClientApp, {
+        servicePrefix: clientPath,
+        serverPath: casRootPath,
+        paths: {
+          proxyCallback: ''
+        },
+        hooks: {
+          before: function(req, res, next) {
+            req.start = Date.now();
+            next();
+          },
+          after: function(req, res, next) {
+            expect(req.start).to.not.be.empty;
+            next();
+          }
+        },
+        logger: function(req, type) {
+          return function() {
+          };
+        }
+      });
+
+      casClientServer = http.createServer(casClientApp);
+
+      casClientServer.listen(3002, function(err) {
+        if (err) throw err;
+
+        utils.getRequest(casRootPath + '/cas/login?service=' + encodeURIComponent(clientPath + '/cas/validate'), function(err, response) {
+          if (err) throw err;
+
+          expect(response.status).to.equal(302);
+
+          var redirectLocation = response.header.location;
+
+          expect(redirectLocation).to.not.be.empty;
+
+          utils.getRequest(redirectLocation, function(err, response) {
+            if (err) throw err;
+
+            expect(response.status).to.equal(302);
+
+            expect(response.header.location).to.not.be.empty;
+
+            // expect(response.header.location).to.equal('/helloworld');
+
+            done();
+          });
+        })
+      });
+    });
+  })
 
 });

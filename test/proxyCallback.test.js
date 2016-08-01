@@ -35,6 +35,16 @@ describe('proxyCallback符合预期', function() {
     casClientFactory(casClientApp, {
       servicePrefix: clientPath,
       serverPath: casRootPath,
+      hooks: {
+        before: function(req, res, next) {
+          req.start = Date.now();
+          next();
+        },
+        after: function(req, res, next) {
+          expect(req.start).to.not.be.empty;
+          next();
+        }
+      },
       logger: function(req, type) {
         return function() {
         };

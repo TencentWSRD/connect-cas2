@@ -25,6 +25,10 @@ var DEFAULT_OPTIONS = {
     logout: '/cas/logout',
     proxyCallback: '/cas/proxyCallback'
   },
+  hooks: {
+    before: null,
+    after: null
+  },
   redirect: false,
   gateway: false,
   renew: false,
@@ -81,7 +85,17 @@ ConnectCas.prototype.core = function() {
   var options = this.options;
   var that = this;
 
-  return function(req, res, next) {
+  if (options.hooks && typeof options.hooks.before === 'function') {
+    return function(req, res, next) {
+      options.hooks.before(req, res, function() {
+        coreMiddleware(req, res, next);
+      });
+    }
+  } else {
+    return coreMiddleware;
+  }
+
+  function coreMiddleware(req, res, next) {
     if (!req.sessionStore) throw new Error('You must setup a session store before you can use CAS client!');
     if (!req.session) throw new Error('Unexpected req.session ' + req.session);
 
@@ -151,27 +165,39 @@ ConnectCas.prototype.core = function() {
 
     if (matchedRestletIntegrateRule) {
       logger.info('Match restlet integration rule: ', matchedRestletIntegrateRule);
-      return next();
+      return doNext(function(req, res, next) {
+        next();
+      });
     }
 
-    if (utils.shouldIgnore(req, options)) return next();
+    if (utils.shouldIgnore(req, options)) return doNext(function(req, res, next) {
+      next();
+    });
 
     if (method === 'GET') {
       switch (pathname) {
         case options.paths.validate:
-          return validate(req, res, next, options);
+          return validate(req, doNext, options);
         case that.proxyCallbackPathName:
-          return proxyCallback(req, res, next, options);
-        default:
-          return authenticate(req, res, next, options);
+          return proxyCallback(req, doNext, options);
       }
     }
     else if (method === 'POST' && pathname === options.paths.validate && options.slo) {
-      return slo(req, res, next, options);
+      return slo(req, doNext, options);
     }
 
-    next();
-  };
+    return authenticate(req, doNext, options);
+
+    function doNext(callback) {
+      if (options.hooks && typeof options.hooks.after === 'function') {
+        options.hooks.after(req, res, function() {
+          callback(req, res, next);
+        });
+      } else {
+        callback(req, res, next);
+      }
+    }
+  }
 };
 
 ConnectCas.prototype.logout = function() {

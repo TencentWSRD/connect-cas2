@@ -318,6 +318,15 @@ options.restletIntegration: {
 }
 ```
 
+#### options.hooks {Object} (Optional)
+Hooks, we currently provide two hook functions, one is before CAS client logic is invoked, one is after. They're all called like a middleware.
+
+#### options.hooks.before {Function}
+Before CAS-invoked hook function, it will be called like `options.hooks.before(req, res, next)`. You could set a timestamp in it or do anything you like in the hook function(Don't forget to call `next()`).
+
+#### options.hooks.after {Function}
+This hook function will be called when all logic that `casClient.core()` middleware is done, it will be called like a middleware: `options.hooks.after(req, res, next)`, so don't forget to call `next()`.
+
 #### options.logger {Function} (Optional)
 Customized logger factory function. Will be called like: `logger(req, type)`, `req` is the Response object, and the type is one of these log types: 'log', 'error', 'warn'.
 
@@ -413,6 +422,9 @@ Example:
      });
    });
 ```
+
+## CHANGE LOG
+[CHANGE LOG](https://github.com/TencentWSRD/connect-cas2/blob/master/CHANGELOG.md)
 
 ## More
 

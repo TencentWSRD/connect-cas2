@@ -1,6 +1,12 @@
+1.1.24
+=================
+* Change `options.redirect(req, res)` to `options.redirect(req)` , return the url you want to redirect other than return a Boolean and handle response in the function.
+* Add `options.hooks`
+* Fix that only GET request will go into the authenticate middleware issue.
+
 1.1.21
 =================
-Change options.ssoff to options.slo
+* Change options.ssoff to options.slo
 
 1.1.21-beta
 =================

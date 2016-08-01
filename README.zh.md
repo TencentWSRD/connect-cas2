@@ -295,6 +295,15 @@ options.restletIntegration: {
 }
 ```
 
+#### options.hooks {Object} (Optional)
+casClient.core()中间件的钩子函数, 目前支持两个钩子函数, 触发时机分别是请求流进入cas中间件与结束中间件, 您可以在这其中添加监控、耗时等业务逻辑. 钩子函数将会被如同中间件一样调用.
+
+#### options.hooks.before {Function}
+当请求流进入casClient.core()中间件时被调用, 他将会被如同中间件一样被调用: `options.hooks.before(req, res, next)`.(不要忘记最后调用`next()`)
+
+#### options.hooks.after {Function}
+当casClient.core()中间件的所有业务逻辑执行结束后被调用, 它的调用方法同上, 再次提醒, 不要忘记最后调用`next()`.
+
 #### options.logger {Function} (Optional)
 一个自定义logger的工厂函数。接受两个参数 `req`与`type`，`req`是Express的Response对象，`type`是一个字符串，为这三个之一： 'log', 'error', 'warn'。
 
