@@ -191,6 +191,11 @@ The login path of your CAS server.
 
 The logout path of your CAS server.
 
+#### options.paths.restletIntegration (String) (Optional, default: '')
+(For CAS Server)
+
+The restlet integration api of your CAS Server. Set up this option only if you need to use restlet integration.
+
 #### options.fromAjax {Object} (Optional, default: {})
 When your user's authentication is expired, all request send to CAS client will redirect to the CAS login path.
 
@@ -289,6 +294,29 @@ How long will the PT be expired, should be shorter than that on your back-end se
 In some cases, not every servers you want to interacted have enabled PT cache, so you can set the filter rules here, if one rule matchs the service url, it's PT won't be cached.
 
 Every rule works like the `options.ignore`. If any rules matched, CAS client will request a new PT when you call `req.getProxyTicket`.
+
+#### options.restletIntegration {Object} (Optional, defualt: {})
+Setting up your CAS restlet integration.
+
+Example:
+
+```javascript
+options.restletIntegration: {
+  demo1: {
+    trigger: function(req) {
+      // Decision whether to use restlet integration, when matched, return true.
+      // Then CAS will not force the user to login, but can get a PT and interacted with the specific back-end service that support restlet integration by a special PGT. 
+      // return false
+    },
+    // Parameters that will send to CAS server to get a special PGT
+    params: {
+      username: 'restlet username',
+      from: 'http://localhost:3000/cas/validate',
+      password: 'restlet password'
+    }
+  }
+}
+```
 
 #### options.logger {Function} (Optional)
 Customized logger factory function. Will be called like: `logger(req, type)`, `req` is the Response object, and the type is one of these log types: 'log', 'error', 'warn'.
