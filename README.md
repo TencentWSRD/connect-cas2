@@ -319,7 +319,7 @@ options.restletIntegration: {
 }
 ```
 
-#### options.hooks {Object} (Optional)
+#### options.hooks {Object} (Optional, since v1.1.24)
 Hooks, we currently provide two hook functions, one is before CAS client logic is invoked, one is after. They're all called like a middleware.
 
 #### options.hooks.before {Function}

@@ -294,7 +294,7 @@ options.restletIntegration: {
 }
 ```
 
-#### options.hooks {Object} (Optional)
+#### options.hooks {Object} (Optional, since v1.1.24)
 casClient.core()中间件的钩子函数, 目前支持两个钩子函数, 触发时机分别是请求流进入cas中间件与结束中间件, 您可以在这其中添加监控、耗时等业务逻辑. 钩子函数将会被如同中间件一样调用.
 
 #### options.hooks.before {Function}
