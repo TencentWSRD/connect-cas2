@@ -177,7 +177,7 @@ ConnectCas.prototype.core = function() {
     if (method === 'GET') {
       switch (pathname) {
         case options.paths.validate:
-          return validate(req, doNext, options);
+          return validate(req, res, doNext, options);
         case that.proxyCallbackPathName:
           return proxyCallback(req, doNext, options);
       }

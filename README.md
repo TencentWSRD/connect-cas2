@@ -235,7 +235,7 @@ In production environment, it's recommended to setup your own logger by options.
 #### options.redirect(req, res) {Function} (Optional, default: null)
 The default behaviour that when a user login or login failed, CAS client will redirect the user to the last url the user visited.
 
-Setting up this option to change this behavior, if you return `true` from this redirect function, then CAS won't redirect to the last url, (So make sure you send a response in your function.)
+Setting up this option to change this behavior, if you return a none-empty string from this redirect function, then CAS won't redirect to the last url, but the url you returned.
 
 For example, on some pages, you don't want redirect the user to the login page after they logout.
 
@@ -244,14 +244,15 @@ it will redirect to `${servicePrefix}${paths.validate}`, then redirect to `${ser
 
 So, on those pages, you can set a key in cookies when your user want to logout, then check this value in cookie in the `options.redirect` function, if match, return `true` in that function and redirect the user to wherever you want.
 
+(NOTICE: The only reason that we pass `res` in this function is give you a way to access the response cookie, please don't send any request via this Response object)
+
 ```javascript
 
 var options = {
   redirect: function(req, res) {
     if (req.cookies.logoutFrom) {
-      // Use relative path for security purpose.
-      res.redirect(302, url.parse(req.cookies.logoutFrom).pathname);
-      return true;
+      // When need to redirect to specific location, return the location you want to redirect.
+      return url.parse(req.cookies.logoutFrom).pathname;
     }
   }
 };

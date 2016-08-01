@@ -208,7 +208,7 @@ CAS Server用于校验ticket的路径。
 #### options.redirect(req, res) {Function} (Optional, default: null)
 默认情况下，用户登录后，或是登录失败后，都会重定向到最后一次访问的路径，设置这个选项可以改变这个行为。
 
-当您需要自行处理重定向逻辑时，需要做这两部： 1. redirect函数必须返回true; 2. 必须处理响应，因为一旦返回true，CAS client将不会继续往下执行也不会调用next，线程将会被阻塞。
+当您需要自行处理重定向逻辑时，配置redirect函数, 并且返回您想要重定向的路径字符串, 如: '/somewhere'.
 
 大部分场景您都不需要配置该项，除了一些比较特殊的场景，比如说某些页面当用户注销后您不希望用户直接跳到登陆页，而是可以继续浏览，具体的操作请看下面的例子：
 
@@ -218,9 +218,8 @@ var options = {
   redirect: function(req, res) {
     // 在redirect中， 根据是否有特殊cookie来决定是否跳走
     if (req.cookies.logoutFrom) {
-      // Use relative path for security purpose.
-      res.redirect(302, url.parse(req.cookies.logoutFrom).pathname);
-      return true;
+      // 返回您想要重定向的路径
+      return url.parse(req.cookies.logoutFrom).pathname;
     }
   }
 };

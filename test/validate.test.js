@@ -403,7 +403,7 @@ describe('validate是否符合预期', function() {
         paths: {
           proxyCallback: ''
         },
-        redirect: function(req) {
+        redirect: function(req, res) {
           return '/helloworld';
         },
         logger: function(req, type) {
