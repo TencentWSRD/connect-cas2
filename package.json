@@ -1,7 +1,5 @@
 {
-  "author": {
-    "name": "vinsonxiao"
-  },
+  "author": "TencentWSRD",
   "bugs": {
     "url": "https://github.com/TencentWSRD/connect-cas2/issues"
   },
@@ -50,5 +48,5 @@
     "start": "node ./example",
     "test": "istanbul cover -x 'example/**' _mocha -- -R spec"
   },
-  "version": "1.1.28"
+  "version": "1.1.29"
 }
