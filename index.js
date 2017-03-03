@@ -150,9 +150,19 @@ ConnectCas.prototype.core = function() {
       proxyOptions.targetService = targetService;
 
       if (options.paths.proxyCallback) {
+        var restletIntegrateParams;
+        if (matchedRestletIntegrateRule) {
+          if (typeof options.restletIntegration[matchedRestletIntegrateRule].params === 'function') {
+            logger.info('Match restlet integration rule and using aync manner, whitch using function to return `object`, to get restlet integration params: ', matchedRestletIntegrateRule);
+            restletIntegrateParams = options.restletIntegration[matchedRestletIntegrateRule].params(req);
+          } else {
+            logger.info('Match restlet integration rule and using default manner, whitch just directly return `object`, to get restlet integration params: ', matchedRestletIntegrateRule);
+            restletIntegrateParams = options.restletIntegration[matchedRestletIntegrateRule].params;
+          }
+        }
         matchedRestletIntegrateRule ? getProxyTicketThroughRestletReq.call(that, req, targetService, {
           name: matchedRestletIntegrateRule,
-          params: options.restletIntegration[matchedRestletIntegrateRule].params
+          params: restletIntegrateParams
         }, callback) :
           getProxyTicket.call(that, req, proxyOptions, callback);
       } else {
