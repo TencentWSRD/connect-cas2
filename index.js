@@ -43,7 +43,8 @@ var DEFAULT_OPTIONS = {
     header: 'x-client-ajax',
     status: 418
   },
-  restletIntegration: {}
+  restletIntegration: {},
+  restletIntegrationIsUsingCache: true
 };
 
 function ConnectCas(options) {
@@ -162,7 +163,8 @@ ConnectCas.prototype.core = function() {
         }
         matchedRestletIntegrateRule ? getProxyTicketThroughRestletReq.call(that, req, targetService, {
           name: matchedRestletIntegrateRule,
-          params: restletIntegrateParams
+          params: restletIntegrateParams,
+          cache: options.restletIntegrationIsUsingCache
         }, callback) :
           getProxyTicket.call(that, req, proxyOptions, callback);
       } else {
