@@ -162,7 +162,7 @@ ConnectCas.prototype.core = function() {
         }
         matchedRestletIntegrateRule ? getProxyTicketThroughRestletReq.call(that, req, targetService, {
           name: matchedRestletIntegrateRule,
-          params: options.restletIntegration[matchedRestletIntegrateRule].params
+          params: restletIntegrateParams
         }, callback) :
           getProxyTicket.call(that, req, proxyOptions, callback);
       } else {
