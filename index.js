@@ -33,6 +33,8 @@ var DEFAULT_OPTIONS = {
   gateway: false,
   renew: false,
   slo: true,
+  requestCert: false,
+  rejectUnauthorized: true,
   // Is proxy-ticket cacheable
   cache: {
     enable: false,
