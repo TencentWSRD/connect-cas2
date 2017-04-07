@@ -1,7 +1,7 @@
 {
-  "author": "TencentWSRD",
+  "author": "zimplexing",
   "bugs": {
-    "url": "https://github.com/TencentWSRD/connect-cas2/issues"
+    "url": "https://github.com/zimplexing/connect-cas3/issues"
   },
   "dependencies": {
     "deprecate": "^0.1.0",
@@ -30,19 +30,19 @@
   "directories": {
     "lib": "./lib"
   },
-  "homepage": "https://github.com/TencentWSRD/connect-cas2",
+  "homepage": "https://github.com/zimplexing/connect-cas3",
   "license": "MIT",
   "main": "index.js",
   "maintainers": [
     {
-      "email": "xiaoyuze88@gmail.com",
-      "name": "xiaoyuze88"
+      "email": "zhangx0728@gmail.com",
+      "name": "zimplexing"
     }
   ],
   "name": "connect-cas2",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/TencentWSRD/connect-cas2.git"
+    "url": "git+https://github.com/zimplexing/connect-cas3.git"
   },
   "scripts": {
     "start": "node ./example",
