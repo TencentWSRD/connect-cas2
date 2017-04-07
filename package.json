@@ -1,7 +1,7 @@
 {
   "author": "zimplexing",
   "bugs": {
-    "url": "https://github.com/zimplexing/connect-cas3/issues"
+    "url": "https://github.com/zimplexing/node-cas-client/issues"
   },
   "dependencies": {
     "deprecate": "^0.1.0",
@@ -9,7 +9,7 @@
     "query-string": "^4.1.0",
     "xml2js": "^0.4.16"
   },
-  "description": "NodeJS implement of CAS(Central Authentication Service) client.",
+  "description": "NodeJS of CAS client.",
   "devDependencies": {
     "body-parser": "^1.15.1",
     "chai": "^3.5.0",
@@ -30,7 +30,7 @@
   "directories": {
     "lib": "./lib"
   },
-  "homepage": "https://github.com/zimplexing/connect-cas3",
+  "homepage": "https://github.com/zimplexing/node-cas-client",
   "license": "MIT",
   "main": "index.js",
   "maintainers": [
@@ -39,14 +39,14 @@
       "name": "zimplexing"
     }
   ],
-  "name": "connect-cas2",
+  "name": "node-cas-client",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zimplexing/connect-cas3.git"
+    "url": "git+https://github.com/zimplexing/node-cas-client.git"
   },
   "scripts": {
     "start": "node ./example",
     "test": "istanbul cover -x 'example/**' _mocha -- -R spec"
   },
-  "version": "1.1.31"
+  "version": "1.0.0"
 }

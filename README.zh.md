@@ -1,4 +1,4 @@
-# connect-cas3
+# node-cas-client
 项目从[connect-cas2](https://github.com/TencentWSRD/connect-cas2)fork过来的，增加了几个配置项：
 
 ```javascript
@@ -11,11 +11,11 @@ var casClient = new ConnectCas({
 
 CAS(Central Authentication Service) 是一个单点登录/登出的协议，下面的文档我们假设您已经对CAS比较熟悉，否则请先查看下CAS协议的[介绍文档](https://github.com/apereo/cas/blob/master/cas-server-documentation/protocol/CAS-Protocol-Specification.md)。
 
-[English version document](https://github.com/zimplexing/connect-cas3/blob/master/README.md)
+[English version document](https://github.com/zimplexing/node-cas-client/blob/master/README.md)
 
 ## Install
 
-    npm install connect-cas3
+    npm install node-cas-client
 
 ## 特性
 
@@ -33,7 +33,7 @@ CAS(Central Authentication Service) 是一个单点登录/登出的协议，下�
 
 ```javascript
 var express = require('express');
-var ConnectCas = require('connect-cas3');
+var ConnectCas = require('node-cas-client');
 var bodyParser = require('body-parser');
 var session = require('express-session');
 var cookieParser = require('cookie-parser');
@@ -371,7 +371,7 @@ app.use(casClient.core());
 
 当您使用代理模型时，您可以通过该方法来获取一个用于与后端服务交互数据的PT，当非代理模型下，调用该函数会直接执行回调，参数为空。
 
-`targetService` {String} 是您需要访问的后端服务的认证ticket的完整路径。您需要确认您的后端服务使用的是什么cas client，配置如何，如使用Java的shiro-cas库，那么默认路径为: http://server.com/shiro-cas，如果也是使用NodeJS的connect-cas3，那么路径将为: http://nodeserver.com/cas/validate
+`targetService` {String} 是您需要访问的后端服务的认证ticket的完整路径。您需要确认您的后端服务使用的是什么cas client，配置如何，如使用Java的shiro-cas库，那么默认路径为: http://server.com/shiro-cas，如果也是使用NodeJS的node-cas-client，那么路径将为: http://nodeserver.com/cas/validate
 
 `proxyOptions`  {Object}        (Optional) 获取PT的选项
 
@@ -402,7 +402,7 @@ Example:
 ```
 
 ## CHANGE LOG
-[CHANGE LOG](https://github.com/zimplexing/connect-cas3/blob/master/CHANGELOG.md)
+[CHANGE LOG](https://github.com/zimplexing/node-cas-client/blob/master/CHANGELOG.md)
 
 ## CONTRIBUTION
 新的代码变更请确保能够通过`npm run test`并且覆盖率达到90%+。
