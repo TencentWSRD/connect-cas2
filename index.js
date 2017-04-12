@@ -161,12 +161,12 @@ ConnectCas.prototype.core = function() {
             restletIntegrateParams = options.restletIntegration[matchedRestletIntegrateRule].params;
           }
         }
-        matchedRestletIntegrateRule ? getProxyTicketThroughRestletReq.call(that, req, targetService, {
+        matchedRestletIntegrateRule ? getProxyTicketThroughRestletReq.call(that, req, res, targetService, {
           name: matchedRestletIntegrateRule,
           params: restletIntegrateParams,
           cache: options.restletIntegrationIsUsingCache
         }, callback) :
-          getProxyTicket.call(that, req, proxyOptions, callback);
+          getProxyTicket.call(that, req, res, proxyOptions, callback);
       } else {
         logger.warn('options.paths.proxyCallback is not set, CAS is on non-proxy mode, you should not request a proxy ticket for non-proxy mode!');
         // TODO: Should this throw an error?
