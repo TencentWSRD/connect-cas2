@@ -48,5 +48,5 @@
     "start": "node ./example",
     "test": "istanbul cover -x 'example/**' _mocha -- -R spec"
   },
-  "version": "1.2.1"
+  "version": "1.2.2"
 }
