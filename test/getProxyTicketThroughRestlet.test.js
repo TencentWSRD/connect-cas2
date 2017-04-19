@@ -375,4 +375,207 @@ describe('利用restlet integration访问正常', function() {
       done();
     });
   });
+
+  it('未登陆下, 配置restletIntegration, 命中规则, 不需要跳登陆, 且能够正确获取pt, 再次调用时, 使用动态获取的缓存key获取pgtId', function(done) {
+    var pgt2;
+
+    hookAfterCasConfig = function(req, res, next) {
+      if (req.path === '/restlet') {
+        if (req.query && req.query.time) {
+          var cachedPgt = globalPGTStore.get('rtxname');
+          expect(cachedPgt).to.equal(pgt2);
+        }
+        req.getProxyTicket('some targetService', function(err, pt) {
+          if (err) throw err;
+
+          pgt2 = globalPGTStore.get('rtxname');
+          expect(pgt2).to.not.be.empty;
+
+          res.send(pt);
+        })
+      } else {
+        next();
+      }
+    };
+
+    casClientServer.close(function(err) {
+      if (err) throw err;
+
+      casClientApp = new Express();
+
+      casClientFactory(casClientApp, {
+        servicePrefix: clientPath,
+        serverPath: casRootPath,
+        paths: {
+          restletIntegration: '/cas/v1/tickets'
+        },
+        restletIntegration: {
+          demo1: {
+            trigger: function(req) {
+              if (req.path.indexOf('restlet') > -1) return true;
+            },
+            params: {
+              username: 'username',
+              from: 'somewhere',
+              type: 8,
+              password: 'password'
+            }
+          }
+        },
+        restletIntegrationIsUsingCache: true,
+        getRestletIntegrateRuleKey: (req) => {
+          return 'rtxname';
+        },
+        logger: function(req, type) {
+          return function() {
+          };
+        }
+      }, function(app) {
+        app.use(function(req, res, next) {
+          if (typeof hookBeforeCasConfig === 'function') {
+            hookBeforeCasConfig(req, res, next);
+          } else {
+            next();
+          }
+        });
+      }, function(app) {
+        app.use(function(req, res, next) {
+          if (typeof hookAfterCasConfig === 'function') {
+            hookAfterCasConfig(req, res, next);
+          } else {
+            next();
+          }
+        });
+      });
+
+      casClientServer = http.createServer(casClientApp);
+
+      casClientServer.listen(3002, function(err) {
+        if (err) throw err;
+
+        utils.getRequest(clientPath + '/restlet', function(err, response) {
+          if (err) throw err;
+          
+          cookies = handleCookies.setCookies(response.header);
+
+          expect(response.status).to.equal(200);
+          expect(response.body).to.not.be.empty;
+          pt = response.body;
+
+          utils.getRequest(clientPath + '/restlet', {
+            params: {
+              time: 1
+            },
+            headers: {
+              Cookie: handleCookies.getCookies(cookies)
+            }
+          }, function(err, response) {
+            if (err) throw err;
+
+            expect(response.status).to.equal(200);
+            expect(response.body).to.not.be.empty;
+            expect(response.body).to.not.equal(pt);
+
+            done();
+          })
+        })
+      });
+    });
+  });
+
+  it('未登陆下, 配置restletIntegration, 使用getRestletIntegrateRuleKey方式, 命中规则, 乱设一个pgt在globalStore, 能够自动重试并重新获取pgt', function(done) {
+    globalPGTStore.clear();
+    globalPGTStore.set('rtxname', 'some invalid pgt');
+
+    var invalidPgt2, validPgt2;
+
+    hookAfterCasConfig = function(req, res, next) {
+      if (req.path === '/restlet') {
+        invalidPgt = globalPGTStore.get('rtxname');
+
+        req.getProxyTicket('xxx', function(err, pt) {
+          if (err) throw err;
+
+          // should refetch a new pgt
+          validPgt = globalPGTStore.get('rtxname');
+
+          expect(validPgt).to.not.equal(invalidPgt);
+          expect(pt).to.not.be.empty;
+          res.send(pt);
+        })
+      } else {
+        next();
+      }
+    };
+
+    casClientServer.close(function(err) {
+      if (err) throw err;
+
+      casClientApp = new Express();
+
+      casClientFactory(casClientApp, {
+        servicePrefix: clientPath,
+        serverPath: casRootPath,
+        paths: {
+          restletIntegration: '/cas/v1/tickets'
+        },
+        restletIntegration: {
+          demo1: {
+            trigger: function(req) {
+              if (req.path.indexOf('restlet') > -1) return true;
+            },
+            params: {
+              username: 'username',
+              from: 'somewhere',
+              type: 8,
+              password: 'password'
+            }
+          }
+        },
+        restletIntegrationIsUsingCache: true,
+        getRestletIntegrateRuleKey: (req) => {
+          return 'rtxname';
+        },
+        logger: function(req, type) {
+          return function() {
+          };
+        }
+      }, function(app) {
+        app.use(function(req, res, next) {
+          if (typeof hookBeforeCasConfig === 'function') {
+            hookBeforeCasConfig(req, res, next);
+          } else {
+            next();
+          }
+        });
+      }, function(app) {
+        app.use(function(req, res, next) {
+          if (typeof hookAfterCasConfig === 'function') {
+            hookAfterCasConfig(req, res, next);
+          } else {
+            next();
+          }
+        });
+      });
+
+      casClientServer = http.createServer(casClientApp);
+
+      casClientServer.listen(3002, function(err) {
+        if (err) throw err;
+
+        var cookies;
+
+        utils.getRequest(clientPath + '/restlet', function(err, response) {
+          if (err) throw err;
+          cookies = handleCookies.setCookies(response.header);
+
+          expect(response.status).to.equal(200);
+          expect(response.body).to.not.be.empty;
+
+          done();
+        });
+        
+      });
+    });
+  });
 });
