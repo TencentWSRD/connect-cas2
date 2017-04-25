@@ -5,7 +5,8 @@ var proxyCallback = require('./lib/proxyCallback');
 var authenticate = require('./lib/authenticate');
 var slo = require('./lib/slo');
 var getProxyTicket = require('./lib/getProxyTicket');
-var getProxyTicketThroughRestletReq = require('./lib/getProxyTicketThroughRestletReq');
+var getProxyTicketThroughRestletReq = require('./lib/getProxyTicketThroughRestletReq').getProxyTicketThroughRestletReq;
+var getProxyTicketThroughRestletReqDcache = require('./lib/getProxyTicketThroughRestletReq').getProxyTicketThroughRestletReqDcache;
 var PTStroe = require('./lib/ptStroe');
 var utils = require('./lib/utils');
 var clearRestletTGTs = require('./lib/clearRestletTGTs');
@@ -161,13 +162,30 @@ ConnectCas.prototype.core = function() {
             restletIntegrateParams = options.restletIntegration[matchedRestletIntegrateRule].params;
           }
         }
-        matchedRestletIntegrateRule ? getProxyTicketThroughRestletReq.call(that, req, res, targetService, {
-          name: matchedRestletIntegrateRule,
-          params: restletIntegrateParams,
-          cache: options.restletIntegrationIsUsingCache,
-          getRestletIntegrateRuleKey: options.getRestletIntegrateRuleKey,
-        }, callback) :
+        if(matchedRestletIntegrateRule) {
+          if(options.restletCache && options.restletCache.type === 'dcache') {
+            if (options.restletCache.cache) {
+              logger.warn('restletCache.cache is empty');
+            }
+            getProxyTicketThroughRestletReqDcache.call(that, req, res, targetService, {
+              name: matchedRestletIntegrateRule,
+              params: restletIntegrateParams,
+              cache: options.restletIntegrationIsUsingCache,
+              getRestletIntegrateRuleKey: options.getRestletIntegrateRuleKey,
+              restletCache: options.restletCache,
+            }, callback);
+          } else {
+            getProxyTicketThroughRestletReq.call(that, req, res, targetService, {
+              name: matchedRestletIntegrateRule,
+              params: restletIntegrateParams,
+              cache: options.restletIntegrationIsUsingCache,
+              getRestletIntegrateRuleKey: options.getRestletIntegrateRuleKey,
+              restletCache: options.restletCache,
+            }, callback);
+          }
+        } else {
           getProxyTicket.call(that, req, res, proxyOptions, callback);
+        }
       } else {
         logger.warn('options.paths.proxyCallback is not set, CAS is on non-proxy mode, you should not request a proxy ticket for non-proxy mode!');
         // TODO: Should this throw an error?

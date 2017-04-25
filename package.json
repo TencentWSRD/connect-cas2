@@ -4,6 +4,7 @@
     "url": "https://github.com/TencentWSRD/connect-cas2/issues"
   },
   "dependencies": {
+    "co": "^4.6.0",
     "deprecate": "^0.1.0",
     "lodash": "^4.13.1",
     "query-string": "^4.1.0",
