@@ -15,6 +15,12 @@ var handleCookies = require('./lib/handleCookie');
 
 var globalPGTStore = require('../lib/globalStoreCache');
 
+var GlobalStoreDcache = require('./lib/globalStoreDcache');
+
+var globalPGTDcacheStore = new GlobalStoreDcache();
+
+var co = require('co');
+
 describe('利用restlet integration访问正常', function() {
 
   var casClientApp, casClientServer, casServerApp, casServer,
@@ -578,4 +584,216 @@ describe('利用restlet integration访问正常', function() {
       });
     });
   });
+
+  it('未登陆下, 配置restletIntegration, 命中规则, 不需要跳登陆, 且能够正确获取pt, 再次调用时, 使用动态获取的dcache缓存key获取pgtId', function(done) {
+    var pgt;
+
+    hookAfterCasConfig = co.wrap(function* (req, res, next) {
+      if (req.path === '/restlet') {
+        if (req.query && req.query.time) {
+          var cachedPgt = yield globalPGTDcacheStore.get('rtxname');
+          expect(cachedPgt).to.equal(pgt);
+        }
+        req.getProxyTicket('some targetService', co.wrap(function* (err, pt) {
+          if (err) throw err;
+
+          pgt = yield globalPGTDcacheStore.get('rtxname');
+          expect(pgt).to.not.be.empty;
+
+          res.send(pt);
+        }));
+      } else {
+        next();
+      }
+    });
+
+    casClientServer.close(function(err) {
+      if (err) throw err;
+
+      casClientApp = new Express();
+
+      casClientFactory(casClientApp, {
+        servicePrefix: clientPath,
+        serverPath: casRootPath,
+        paths: {
+          restletIntegration: '/cas/v1/tickets'
+        },
+        restletIntegration: {
+          demo1: {
+            trigger: function(req) {
+              if (req.path.indexOf('restlet') > -1) return true;
+            },
+            params: {
+              username: 'username',
+              from: 'somewhere',
+              type: 8,
+              password: 'password'
+            }
+          }
+        },
+        restletIntegrationIsUsingCache: true,
+        restletCache: {
+          type: 'dcache',
+          cache: globalPGTDcacheStore,
+        },
+        getRestletIntegrateRuleKey: (req) => {
+          return 'rtxname';
+        },
+        logger: function(req, type) {
+          return function() {
+          };
+        }
+      }, function(app) {
+        app.use(function(req, res, next) {
+          if (typeof hookBeforeCasConfig === 'function') {
+            hookBeforeCasConfig(req, res, next);
+          } else {
+            next();
+          }
+        });
+      }, function(app) {
+        app.use(function(req, res, next) {
+          if (typeof hookAfterCasConfig === 'function') {
+            hookAfterCasConfig(req, res, next);
+          } else {
+            next();
+          }
+        });
+      });
+
+      casClientServer = http.createServer(casClientApp);
+
+      casClientServer.listen(3002, function(err) {
+        if (err) throw err;
+
+        utils.getRequest(clientPath + '/restlet', function(err, response) {
+          if (err) throw err;
+          
+          cookies = handleCookies.setCookies(response.header);
+
+          expect(response.status).to.equal(200);
+          expect(response.body).to.not.be.empty;
+          pt = response.body;
+
+          utils.getRequest(clientPath + '/restlet', {
+            params: {
+              time: 1
+            },
+            headers: {
+              Cookie: handleCookies.getCookies(cookies)
+            }
+          }, function(err, response) {
+            if (err) throw err;
+
+            expect(response.status).to.equal(200);
+            expect(response.body).to.not.be.empty;
+            expect(response.body).to.not.equal(pt);
+
+            done();
+          })
+        })
+      });
+    });
+  });
+
+  it('未登陆下, 配置restletIntegration, 使用getRestletIntegrateRuleKey方式, 命中规则, 乱设一个pgt在dcacheglobalStore, 能够自动重试并重新获取pgt', function(done) {
+    globalPGTDcacheStore.clear();
+    globalPGTDcacheStore.set('rtxname', 'some invalid pgt');
+
+    var invalidPgt2, validPgt2;
+
+    hookAfterCasConfig = co.wrap(function* (req, res, next) {
+      if (req.path === '/restlet') {
+        invalidPgt = yield globalPGTDcacheStore.get('rtxname');
+
+        req.getProxyTicket('xxx', co.wrap(function* (err, pt) {
+          if (err) throw err;
+
+          // should refetch a new pgt
+          validPgt = yield globalPGTDcacheStore.get('rtxname');
+
+          expect(validPgt).to.not.equal(invalidPgt);
+          expect(pt).to.not.be.empty;
+          res.send(pt);
+        }));
+      } else {
+        next();
+      }
+    });;
+
+    casClientServer.close(function(err) {
+      if (err) throw err;
+
+      casClientApp = new Express();
+
+      casClientFactory(casClientApp, {
+        servicePrefix: clientPath,
+        serverPath: casRootPath,
+        paths: {
+          restletIntegration: '/cas/v1/tickets'
+        },
+        restletIntegration: {
+          demo1: {
+            trigger: function(req) {
+              if (req.path.indexOf('restlet') > -1) return true;
+            },
+            params: {
+              username: 'username',
+              from: 'somewhere',
+              type: 8,
+              password: 'password'
+            }
+          }
+        },
+        restletIntegrationIsUsingCache: true,
+        restletCache: {
+          type: 'dcache',
+          cache: globalPGTDcacheStore,
+        },
+        getRestletIntegrateRuleKey: (req) => {
+          return 'rtxname';
+        },
+        logger: function(req, type) {
+          return function() {
+          };
+        }
+      }, function(app) {
+        app.use(function(req, res, next) {
+          if (typeof hookBeforeCasConfig === 'function') {
+            hookBeforeCasConfig(req, res, next);
+          } else {
+            next();
+          }
+        });
+      }, function(app) {
+        app.use(function(req, res, next) {
+          if (typeof hookAfterCasConfig === 'function') {
+            hookAfterCasConfig(req, res, next);
+          } else {
+            next();
+          }
+        });
+      });
+
+      casClientServer = http.createServer(casClientApp);
+
+      casClientServer.listen(3002, function(err) {
+        if (err) throw err;
+
+        var cookies;
+
+        utils.getRequest(clientPath + '/restlet', function(err, response) {
+          if (err) throw err;
+          cookies = handleCookies.setCookies(response.header);
+
+          expect(response.status).to.equal(200);
+          expect(response.body).to.not.be.empty;
+
+          done();
+        });
+        
+      });
+    });
+  });
+
 });
