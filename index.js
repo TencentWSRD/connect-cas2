@@ -164,7 +164,7 @@ ConnectCas.prototype.core = function() {
         }
         if(matchedRestletIntegrateRule) {
           if(options.restletCache && options.restletCache.type === 'dcache') {
-            if (options.restletCache.cache) {
+            if (!options.restletCache.cache) {
               logger.warn('restletCache.cache is empty');
             }
             getProxyTicketThroughRestletReqDcache.call(that, req, res, targetService, {
