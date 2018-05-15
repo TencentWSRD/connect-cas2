@@ -46,8 +46,8 @@ module.exports = function(app, casOptions, hookBeforeCasConfig, hookAfterCasConf
       /\/ignore/
     ],
     match: [],
-    servicePrefix: 'http://10.17.86.87:8080',
-    serverPath: 'http://cas.sdet.wsd.com',
+    servicePrefix: 'http://localhost:8080',
+    serverPath: 'http://cas.sdet.test.com',
     paths: {
       validate: '/cas/validate',
       serviceValidate: '/cas/serviceValidate',
@@ -84,7 +84,7 @@ module.exports = function(app, casOptions, hookBeforeCasConfig, hookAfterCasConf
         },
         params: {
           username: demoParams.appId + '_' + demoParams.pid,
-          from: 'http://10.17.86.87:8080/cas/validate',
+          from: 'http://localhost:8080/cas/validate',
           type: demoParams.type,
           password: JSON.stringify({ appId: demoParams.appId + '_' + demoParams.pid, appKey: demoParams.appKey })
         }

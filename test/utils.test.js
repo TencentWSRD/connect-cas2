@@ -98,7 +98,7 @@ describe('utils单元测试', function() {
   it('getPath传入指定名称, 返回拼好的路径', function() {
     var options = {
       servicePrefix: 'http://localhost:8080',
-      serverPath: 'http://cas.sdet.wsd.com',
+      serverPath: 'http://cas.sdet.test.com',
       paths: {
         validate: '/cas/validate',
         serviceValidate: '/cas/serviceValidate',
@@ -110,31 +110,31 @@ describe('utils单元测试', function() {
       }
     };
 
-    expect(utils.getPath('login', options)).to.equal('http://cas.sdet.wsd.com/cas/login?service=' + encodeURIComponent('http://localhost:8080/cas/validate'));
-    expect(utils.getPath('logout', options)).to.equal('http://cas.sdet.wsd.com/cas/logout?service=' + encodeURIComponent('http://localhost:8080/cas/validate'));
+    expect(utils.getPath('login', options)).to.equal('http://cas.sdet.test.com/cas/login?service=' + encodeURIComponent('http://localhost:8080/cas/validate'));
+    expect(utils.getPath('logout', options)).to.equal('http://cas.sdet.test.com/cas/logout?service=' + encodeURIComponent('http://localhost:8080/cas/validate'));
     expect(utils.getPath('pgtUrl', options)).to.equal('http://localhost:8080/cas/proxyCallback');
 
     // absolute path
     expect(utils.getPath('pgtUrl', {
       servicePrefix: 'http://localhost:8080',
-      serverPath: 'http://cas.sdet.wsd.com',
+      serverPath: 'http://cas.sdet.test.com',
       paths: {
         validate: '/cas/validate',
         serviceValidate: '/cas/serviceValidate',
         proxy: '/cas/proxy',
         login: '/cas/login',
         logout: '/cas/logout',
-        proxyCallback: 'http://10.17.86.87:8080/cas/proxyCallback',
+        proxyCallback: 'http://localhost:8080/cas/proxyCallback',
         restletIntegration: '/cas/v1/tickets'
       }
-    })).to.equal('http://10.17.86.87:8080/cas/proxyCallback');
+    })).to.equal('http://localhost:8080/cas/proxyCallback');
 
-    expect(utils.getPath('serviceValidate', options)).to.equal('http://cas.sdet.wsd.com/cas/serviceValidate');
-    expect(utils.getPath('proxy', options)).to.equal('http://cas.sdet.wsd.com/cas/proxy');
+    expect(utils.getPath('serviceValidate', options)).to.equal('http://cas.sdet.test.com/cas/serviceValidate');
+    expect(utils.getPath('proxy', options)).to.equal('http://cas.sdet.test.com/cas/proxy');
     expect(utils.getPath('service', options)).to.equal('http://localhost:8080/cas/validate');
     expect(utils.getPath('validate', options)).to.equal('http://localhost:8080/cas/validate');
 
-    expect(utils.getPath('restletIntegration', options)).to.equal('http://cas.sdet.wsd.com/cas/v1/tickets');
+    expect(utils.getPath('restletIntegration', options)).to.equal('http://cas.sdet.test.com/cas/v1/tickets');
   });
 
   it('isMatchRule校验规则符合预期', function() {
@@ -166,14 +166,14 @@ describe('utils单元测试', function() {
     };
     expect(utils.getOrigin(req, {
       servicePrefix: 'http://localhost:8080',
-      serverPath: 'http://cas.sdet.wsd.com',
+      serverPath: 'http://cas.sdet.test.com',
       paths: {
         validate: '/cas/validate',
         serviceValidate: '/cas/serviceValidate',
         proxy: '/cas/proxy',
         login: '/cas/login',
         logout: '/cas/logout',
-        proxyCallback: 'http://10.17.86.87:8080/cas/proxyCallback',
+        proxyCallback: 'http://localhost:8080/cas/proxyCallback',
         restletIntegration: '/cas/v1/tickets'
       }
     })).to.equal('http://localhost:8080/api');
@@ -263,7 +263,7 @@ describe('utils单元测试', function() {
 
     var options = {
       servicePrefix: 'http://localhost:8080',
-      serverPath: 'http://cas.sdet.wsd.com',
+      serverPath: 'http://cas.sdet.test.com',
       paths: {
         validate: '/cas/validate',
         serviceValidate: '/cas/serviceValidate',

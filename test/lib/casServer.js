@@ -115,7 +115,7 @@ var getRestletIntegrationPGT = function(pgt) {
   </head>\
   <body>\
   <h1>TGT Created</h1>\
-  <form action="http://remdev.oa.com/buglycas/vi/tickets/' + pgt + '" method="POST">Service:\
+  <form action="http://remdev.test.com/cas/vi/tickets/' + pgt + '" method="POST">Service:\
   <input type="text" name="service" value="">\
     <br>\
     <input type="submit" value="Submit">\
