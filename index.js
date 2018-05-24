@@ -107,7 +107,7 @@ ConnectCas.prototype.core = function() {
 
     var matchedRestletIntegrateRule;
 
-    if (options.restletIntegration) {
+    if (!_.isEmpty(options.restletIntegration)) {
       if (options.paths.restletIntegration) {
         req.clearRestlet = clearRestletTGTs.bind(null, options, logger);
 
