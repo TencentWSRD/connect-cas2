@@ -28,7 +28,8 @@ var DEFAULT_OPTIONS = {
   },
   hooks: {
     before: null,
-    after: null
+    after: null,
+    decodeOsl: null,    
   },
   redirect: false,
   gateway: false,
