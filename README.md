@@ -11,7 +11,7 @@ A complete implement of CAS Client middleware for Express/Connect, support CAS 2
 
 CAS(Central Authentication Service) is a single-sign-on / single-sign-off protocol for the web.
 
-We suppose you are already familiar with the CAS protocol, if not, please read this [document](https://github.com/apereo/cas/blob/master/cas-server-documentation/protocol/CAS-Protocol-Specification.md) before you use this.
+We suppose you are already familiar with the CAS protocol, if not, please read this [document](https://github.com/zimplexing/node-cas-client/blob/master/README.zh.md) before you use this.
 
 [中文文档](https://github.com/zimplexing/node-cas-client/blob/master/README.zh.md)
 
