@@ -8,7 +8,8 @@
     "deprecate": "^0.1.0",
     "lodash": "^4.13.1",
     "query-string": "^4.1.0",
-    "xml2js": "^0.4.16"
+    "xml2js": "^0.4.16",
+    "snyk": "^1.319.0"
   },
   "description": "NodeJS implement of CAS(Central Authentication Service) client.",
   "devDependencies": {
@@ -47,7 +48,10 @@
   },
   "scripts": {
     "start": "node ./example",
-    "test": "istanbul cover -x 'example/**' _mocha -- -R spec"
+    "test": "istanbul cover -x 'example/**' _mocha -- -R spec",
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
   },
-  "version": "1.2.5"
+  "version": "1.2.5",
+  "snyk": true
 }
